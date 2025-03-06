@@ -1,4 +1,4 @@
-const API_URL = process.env.API_URL || 'http://localhost:8000/api';
+const API_URL = process.env.API_URL || 'https://cumeal.vercel.app/api';
 
 // Get all menus
 export async function getAllMenus() {
