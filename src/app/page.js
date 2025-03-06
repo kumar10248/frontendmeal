@@ -11,21 +11,51 @@ import { CalendarDays, AlertCircle, Utensils, Sunrise, Soup, Moon } from "lucide
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 
+// Helper function to get date labels (Today, Tomorrow, or weekday)
+const getDateLabel = (date) => {
+  if (!date) return 'Invalid Date';
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const menuDate = new Date(date);
+  if (isNaN(menuDate.getTime())) return 'Invalid Date';
+
+  menuDate.setHours(0, 0, 0, 0);
+
+  if (menuDate.getTime() === today.getTime()) return 'Today';
+  if (menuDate.getTime() === tomorrow.getTime()) return 'Tomorrow';
+
+  return menuDate.toLocaleDateString('en-US', { weekday: 'long' });
+};
+
 export default function HomePage() {
   const [weeklyMenu, setWeeklyMenu] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('all')
+  const [currentDate, setCurrentDate] = useState(new Date())
 
+  // Fetch menu data
   useEffect(() => {
     const loadWeeklyMenu = async () => {
       try {
         setLoading(true)
         const data = await getCurrentWeekMenu()
-        setWeeklyMenu(data)
+        
+        // Update date labels locally
+        const updatedData = data.map(menu => ({
+          ...menu,
+          dateLabel: getDateLabel(menu.date)
+        }))
+        
+        setWeeklyMenu(updatedData)
         
         // Set default tab to today if exists
-        const todayMenu = data.find(menu => menu.dateLabel === 'Today')
+        const todayMenu = updatedData.find(menu => menu.dateLabel === 'Today')
         if (todayMenu) {
           setActiveTab(todayMenu._id)
         }
@@ -38,6 +68,48 @@ export default function HomePage() {
     }
     
     loadWeeklyMenu()
+  }, [currentDate]) // Re-fetch when currentDate changes
+
+  // Update date at midnight
+  useEffect(() => {
+    // Function to check if date has changed
+    const checkDateChange = () => {
+      const now = new Date()
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      
+      // If current date is different from the stored date
+      if (today.getTime() !== currentDate.setHours(0, 0, 0, 0)) {
+        setCurrentDate(today)
+      }
+    }
+    
+    // Check immediately
+    checkDateChange()
+    
+    // Set up interval to check every minute
+    const intervalId = setInterval(checkDateChange, 60000)
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId)
+  }, [currentDate])
+
+  // Update date labels periodically
+  useEffect(() => {
+    // Function to update the date labels
+    const updateDateLabels = () => {
+      setWeeklyMenu(prevMenu => 
+        prevMenu.map(menu => ({
+          ...menu,
+          dateLabel: getDateLabel(menu.date)
+        }))
+      )
+    }
+    
+    // Set up interval to update labels every hour
+    const intervalId = setInterval(updateDateLabels, 3600000) // Every hour
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId)
   }, [])
 
   if (loading) {
@@ -117,6 +189,7 @@ export default function HomePage() {
     </div>
   )
 }
+// Update the MenuCard component to support dark mode
 
 function MenuCard({ menu, expanded = false }) {
   const date = new Date(menu.date)
@@ -136,12 +209,14 @@ function MenuCard({ menu, expanded = false }) {
       className={cn("group relative", expanded ? "w-full" : "hover:shadow-lg transition-shadow")}
     >
       <Card className={cn(
-        "relative overflow-hidden bg-white/90 backdrop-blur-sm",
+        "relative overflow-hidden backdrop-blur-sm",
+        // Remove the fixed bg-white/90 and use system color scheme
+        "bg-card dark:bg-card",
         expanded ? "w-full" : "",
-        isToday ? "border-2 border-blue-500/20" : ""
+        isToday ? "border-2 border-blue-500/20 dark:border-blue-400/20" : ""
       )}>
         {isToday && (
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 transform rotate-45 translate-x-20 -translate-y-8" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 dark:bg-blue-400/10 transform rotate-45 translate-x-20 -translate-y-8" />
         )}
 
         <CardHeader className="pb-2">
@@ -149,7 +224,7 @@ function MenuCard({ menu, expanded = false }) {
             <CardTitle className="flex items-center gap-2 text-xl">
               {menu.dateLabel}
               {isToday && (
-                <Badge className="ml-2 bg-gradient-to-r from-blue-600 to-purple-600">
+                <Badge className="ml-2 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-500 dark:to-purple-500">
                   Today
                 </Badge>
               )}
@@ -159,14 +234,14 @@ function MenuCard({ menu, expanded = false }) {
             </CardTitle>
             {!expanded && (
               <div className="flex items-center text-muted-foreground text-sm">
-                <CalendarDays className="mr-1 h-4 w-4 text-purple-500" />
+                <CalendarDays className="mr-1 h-4 w-4 text-purple-500 dark:text-purple-400" />
                 {formattedDate}
               </div>
             )}
           </div>
           {expanded && (
             <CardDescription className="text-base">
-              <CalendarDays className="inline mr-2 h-4 w-4 text-blue-500" />
+              <CalendarDays className="inline mr-2 h-4 w-4 text-blue-500 dark:text-blue-400" />
               {formattedDate}
             </CardDescription>
           )}
@@ -183,43 +258,45 @@ function MenuCard({ menu, expanded = false }) {
   )
 }
 
+// Update the MealSection component for dark mode compatibility
 function MealSection({ title, content, icon }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
+        <div className="p-2 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg">
           {icon}
         </div>
-        <h3 className="font-semibold text-lg text-gray-800">{title}</h3>
+        <h3 className="font-semibold text-lg text-gray-800 dark:text-gray-100">{title}</h3>
       </div>
-      <p className="text-gray-600 pl-12 relative before:absolute before:left-8 before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-blue-200 before:to-purple-200">
+      <p className="text-gray-600 dark:text-gray-300 pl-12 relative before:absolute before:left-8 before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-blue-200 before:to-purple-200 dark:before:from-blue-700 dark:before:to-purple-700">
         {content}
       </p>
     </div>
   )
 }
 
+// Update LoadingSkeleton for dark mode
 function LoadingSkeleton() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 py-8 px-4 sm:px-6 lg:px-8">
       <div className="space-y-2 text-center">
-        <Skeleton className="h-10 w-64 mx-auto bg-blue-100/50" />
-        <Skeleton className="h-6 w-72 mx-auto bg-purple-100/50" />
+        <Skeleton className="h-10 w-64 mx-auto bg-blue-100/50 dark:bg-blue-800/20" />
+        <Skeleton className="h-6 w-72 mx-auto bg-purple-100/50 dark:bg-purple-800/20" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="overflow-hidden bg-white/90 backdrop-blur-sm relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 to-purple-50/30 animate-pulse" />
+          <Card key={i} className="overflow-hidden backdrop-blur-sm relative bg-card dark:bg-card">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 to-purple-50/30 dark:from-blue-900/20 dark:to-purple-900/20 animate-pulse" />
             <CardHeader>
-              <Skeleton className="h-7 w-32 bg-blue-100/50" />
-              <Skeleton className="h-4 w-48 bg-purple-100/50" />
+              <Skeleton className="h-7 w-32 bg-blue-100/50 dark:bg-blue-800/20" />
+              <Skeleton className="h-4 w-48 bg-purple-100/50 dark:bg-purple-800/20" />
             </CardHeader>
             <CardContent className="space-y-4">
               {[1, 2, 3, 4].map((j) => (
                 <div key={j} className="space-y-2">
-                  <Skeleton className="h-4 w-24 bg-blue-100/50" />
-                  <Skeleton className="h-4 w-full bg-purple-100/50" />
+                  <Skeleton className="h-4 w-24 bg-blue-100/50 dark:bg-blue-800/20" />
+                  <Skeleton className="h-4 w-full bg-purple-100/50 dark:bg-purple-800/20" />
                 </div>
               ))}
             </CardContent>
