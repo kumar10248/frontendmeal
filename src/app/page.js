@@ -1,101 +1,231 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { useState, useEffect } from 'react'
+import { getCurrentWeekMenu } from './lib/api'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { CalendarDays, AlertCircle, Utensils, Sunrise, Soup, Moon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { motion } from "framer-motion"
+
+export default function HomePage() {
+  const [weeklyMenu, setWeeklyMenu] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [activeTab, setActiveTab] = useState('all')
+
+  useEffect(() => {
+    const loadWeeklyMenu = async () => {
+      try {
+        setLoading(true)
+        const data = await getCurrentWeekMenu()
+        setWeeklyMenu(data)
+        
+        // Set default tab to today if exists
+        const todayMenu = data.find(menu => menu.dateLabel === 'Today')
+        if (todayMenu) {
+          setActiveTab(todayMenu._id)
+        }
+      } catch (err) {
+        console.error('Error loading menu:', err)
+        setError('Failed to load menu data. Please try again later.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadWeeklyMenu()
+  }, [])
+
+  if (loading) {
+    return <LoadingSkeleton />
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mt-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )
+  }
+
+  if (weeklyMenu.length === 0) {
+    return (
+      <Alert className="mt-6">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>No menu available</AlertTitle>
+        <AlertDescription>There is no menu available for this week.</AlertDescription>
+      </Alert>
+    )
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/30 to-purple-50/50 py-8 px-4 sm:px-6 lg:px-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-7xl mx-auto space-y-8"
+      >
+        <div className="space-y-2 text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Weekly Dining Experience
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Savor the flavors of the week
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-6 flex flex-wrap h-auto gap-2 bg-transparent">
+            <TabsTrigger 
+              value="all" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+            >
+              All Week
+            </TabsTrigger>
+            {weeklyMenu.map((menu) => (
+              <TabsTrigger
+                key={menu._id}
+                value={menu._id}
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+              >
+                {menu.dateLabel}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          <TabsContent value="all" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {weeklyMenu.map((menu) => (
+                <MenuCard key={menu._id} menu={menu} />
+              ))}
+            </div>
+          </TabsContent>
+
+          {weeklyMenu.map((menu) => (
+            <TabsContent key={menu._id} value={menu._id}>
+              <MenuCard menu={menu} expanded />
+            </TabsContent>
+          ))}
+        </Tabs>
+      </motion.div>
     </div>
-  );
+  )
+}
+
+function MenuCard({ menu, expanded = false }) {
+  const date = new Date(menu.date)
+  const formattedDate = date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+
+  const isToday = menu.dateLabel === 'Today'
+  const isTomorrow = menu.dateLabel === 'Tomorrow'
+
+  return (
+    <motion.div
+      initial={{ scale: 0.98, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className={cn("group relative", expanded ? "w-full" : "hover:shadow-lg transition-shadow")}
+    >
+      <Card className={cn(
+        "relative overflow-hidden bg-white/90 backdrop-blur-sm",
+        expanded ? "w-full" : "",
+        isToday ? "border-2 border-blue-500/20" : ""
+      )}>
+        {isToday && (
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 transform rotate-45 translate-x-20 -translate-y-8" />
+        )}
+
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              {menu.dateLabel}
+              {isToday && (
+                <Badge className="ml-2 bg-gradient-to-r from-blue-600 to-purple-600">
+                  Today
+                </Badge>
+              )}
+              {isTomorrow && (
+                <Badge variant="outline" className="ml-2">Tomorrow</Badge>
+              )}
+            </CardTitle>
+            {!expanded && (
+              <div className="flex items-center text-muted-foreground text-sm">
+                <CalendarDays className="mr-1 h-4 w-4 text-purple-500" />
+                {formattedDate}
+              </div>
+            )}
+          </div>
+          {expanded && (
+            <CardDescription className="text-base">
+              <CalendarDays className="inline mr-2 h-4 w-4 text-blue-500" />
+              {formattedDate}
+            </CardDescription>
+          )}
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          <MealSection title="Breakfast" content={menu.breakfast} icon={<Sunrise className="w-5 h-5 text-amber-500" />} />
+          <MealSection title="Lunch" content={menu.lunch} icon={<Utensils className="w-5 h-5 text-emerald-500" />} />
+          <MealSection title="Snacks" content={menu.snacks} icon={<Soup className="w-5 h-5 text-orange-500" />} />
+          <MealSection title="Dinner" content={menu.dinner} icon={<Moon className="w-5 h-5 text-indigo-500" />} />
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
+}
+
+function MealSection({ title, content, icon }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
+          {icon}
+        </div>
+        <h3 className="font-semibold text-lg text-gray-800">{title}</h3>
+      </div>
+      <p className="text-gray-600 pl-12 relative before:absolute before:left-8 before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-blue-200 before:to-purple-200">
+        {content}
+      </p>
+    </div>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto space-y-8 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="space-y-2 text-center">
+        <Skeleton className="h-10 w-64 mx-auto bg-blue-100/50" />
+        <Skeleton className="h-6 w-72 mx-auto bg-purple-100/50" />
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="overflow-hidden bg-white/90 backdrop-blur-sm relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 to-purple-50/30 animate-pulse" />
+            <CardHeader>
+              <Skeleton className="h-7 w-32 bg-blue-100/50" />
+              <Skeleton className="h-4 w-48 bg-purple-100/50" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[1, 2, 3, 4].map((j) => (
+                <div key={j} className="space-y-2">
+                  <Skeleton className="h-4 w-24 bg-blue-100/50" />
+                  <Skeleton className="h-4 w-full bg-purple-100/50" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
 }
