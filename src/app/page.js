@@ -144,10 +144,10 @@ export default function HomePage() {
         className="max-w-7xl mx-auto space-y-8"
       >
         <div className="space-y-2 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-red-600 to-violet-600 bg-clip-text text-transparent">
-            Chandigarh University Hostel Mess Menu
-          </h1>
-          <p className="text-lg text-muted-foreground">
+        <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-600 bg-clip-text text-transparent">
+  Chandigarh University Hostel Mess Menu
+</h1>
+          <p className="text-lg text-muted-foreground ">
             Savor the flavors of the week
           </p>
         </div>
