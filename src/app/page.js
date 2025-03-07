@@ -248,11 +248,27 @@ function MenuCard({ menu, expanded = false }) {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          <MealSection title="Breakfast" content={menu.breakfast} icon={<Sunrise className="w-5 h-5 text-amber-500" />} />
-          <MealSection title="Lunch" content={menu.lunch} icon={<Utensils className="w-5 h-5 text-emerald-500" />} />
-          <MealSection title="Snacks" content={menu.snacks} icon={<Soup className="w-5 h-5 text-orange-500" />} />
-          <MealSection title="Dinner" content={menu.dinner} icon={<Moon className="w-5 h-5 text-indigo-500" />} />
-        </CardContent>
+  <MealSection 
+    title={<>Breakfast <span className="text-green-500">(7:30 AM - 9:00 AM)</span></>} 
+    content={menu.breakfast} 
+    icon={<Sunrise className="w-5 h-5 text-amber-500" />} 
+  />
+  <MealSection 
+    title={<>Lunch <span className="text-green-500">(12:00 PM - 2:00 PM)</span></>} 
+    content={menu.lunch} 
+    icon={<Utensils className="w-5 h-5 text-emerald-500" />} 
+  />
+  <MealSection 
+    title={<>Snacks <span className="text-green-500">(4:30 PM - 5:15 PM)</span></>} 
+    content={menu.snacks} 
+    icon={<Soup className="w-5 h-5 text-orange-500" />} 
+  />
+  <MealSection 
+    title={<>Dinner <span className="text-green-500">(7:30 PM - 9:00 PM)</span></>} 
+    content={menu.dinner} 
+    icon={<Moon className="w-5 h-5 text-indigo-500" />} 
+  />
+</CardContent>
       </Card>
     </motion.div>
   )
