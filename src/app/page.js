@@ -246,25 +246,24 @@ function MenuCard({ menu, expanded = false }) {
             </CardDescription>
           )}
         </CardHeader>
-
         <CardContent className="space-y-6">
   <MealSection 
-    title={<>Breakfast <span className="text-green-500">(7:30 AM - 9:00 AM)</span></>} 
+    title={<>Breakfast <span className="text-green-500 text-sm">(7:30 AM - 9:00 AM)</span></>} 
     content={menu.breakfast} 
     icon={<Sunrise className="w-5 h-5 text-amber-500" />} 
   />
   <MealSection 
-    title={<>Lunch <span className="text-green-500">(12:00 PM - 2:00 PM)</span></>} 
+    title={<>Lunch <span className="text-green-500 text-sm">(12:00 PM - 2:00 PM)</span></>} 
     content={menu.lunch} 
     icon={<Utensils className="w-5 h-5 text-emerald-500" />} 
   />
   <MealSection 
-    title={<>Snacks <span className="text-green-500">(4:30 PM - 5:15 PM)</span></>} 
+    title={<>Snacks <span className="text-green-500 text-sm">(4:30 PM - 5:15 PM)</span></>} 
     content={menu.snacks} 
     icon={<Soup className="w-5 h-5 text-orange-500" />} 
   />
   <MealSection 
-    title={<>Dinner <span className="text-green-500">(7:30 PM - 9:00 PM)</span></>} 
+    title={<>Dinner <span className="text-green-500 text-sm">(7:30 PM - 9:00 PM)</span></>} 
     content={menu.dinner} 
     icon={<Moon className="w-5 h-5 text-indigo-500" />} 
   />
