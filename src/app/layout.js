@@ -7,8 +7,8 @@ import Footer from './components/footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Weekly Meal Menu',
-  description: 'View weekly meal menu including breakfast, lunch, snacks, and dinner',
+  title: 'Cuisine',
+  description: 'View Chandigarh University Hostel meal menu including breakfast, lunch, snacks, and dinner',
 }
 
 export default function RootLayout({ children }) {
