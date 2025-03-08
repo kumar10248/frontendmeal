@@ -34,7 +34,8 @@ export default function Header() {
   
   const navLinks = [
     { name: 'Menu', href: '/' },
-    { name: 'Admin', href: 'https://meal-admin-5bcf.vercel.app/' }
+    { name: 'Admin', href: 'https://meal-admin-5bcf.vercel.app/' },
+    {name:'Developer',href:'https://devashish.top'}
   ]
   
   const NavItems = () => (
