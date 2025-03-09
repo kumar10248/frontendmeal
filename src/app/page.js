@@ -15,21 +15,63 @@ import { motion } from "framer-motion"
 const getDateLabel = (date) => {
   if (!date) return 'Invalid Date';
 
-  const today = new Date();
+  // Create dates in IST timezone
+  const now = new Date();
+  // Convert to IST (UTC+5:30)
+  const offset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+  const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + offset);
+  
+  // Create today's date in IST, with time set to midnight
+  const today = new Date(istTime);
   today.setHours(0, 0, 0, 0);
-
+  
+  // Create tomorrow's date in IST
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Parse the menu date and convert to IST if needed
+  let menuDate = new Date(date);
+  if (isNaN(menuDate.getTime())) return 'Invalid Date';
+  
+  // Set to midnight for comparison
+  menuDate.setHours(0, 0, 0, 0);
+  
+  // For accurate comparison, work with just the date portion
+  const todayStr = today.toISOString().split('T')[0];
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  const menuDateStr = menuDate.toISOString().split('T')[0];
+  
+  if (menuDateStr === todayStr) return 'Today';
+  if (menuDateStr === tomorrowStr) return 'Tomorrow';
+  
+  // Format using IST
+  return menuDate.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'Asia/Kolkata' });
+};
 
+// Debug function to help diagnose date issues
+const debugDateInfo = (date) => {
+  if (!date) return 'Invalid Date';
+  
   const menuDate = new Date(date);
   if (isNaN(menuDate.getTime())) return 'Invalid Date';
-
-  menuDate.setHours(0, 0, 0, 0);
-
-  if (menuDate.getTime() === today.getTime()) return 'Today';
-  if (menuDate.getTime() === tomorrow.getTime()) return 'Tomorrow';
-
-  return menuDate.toLocaleDateString('en-US', { weekday: 'long' });
+  
+  // Get current date info
+  const now = new Date();
+  const offset = 5.5 * 60 * 60 * 1000;
+  const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + offset);
+  
+  // Format dates for comparison
+  const istDateStr = istTime.toISOString().split('T')[0];
+  const menuDateStr = menuDate.toISOString().split('T')[0];
+  
+  return {
+    currentDate: now.toString(),
+    currentIST: istTime.toString(),
+    currentISODate: istDateStr,
+    menuFullDate: menuDate.toString(),
+    menuISODate: menuDateStr,
+    isToday: istDateStr === menuDateStr
+  };
 };
 
 export default function HomePage() {
@@ -38,6 +80,7 @@ export default function HomePage() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('all')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [debugInfo, setDebugInfo] = useState(null) // For debugging
 
   // Fetch menu data
   useEffect(() => {
@@ -45,6 +88,11 @@ export default function HomePage() {
       try {
         setLoading(true)
         const data = await getCurrentWeekMenu()
+        
+        // Add debug info for the first menu item if available
+        if (data.length > 0) {
+          setDebugInfo(debugDateInfo(data[0].date))
+        }
         
         // Update date labels locally
         const updatedData = data.map(menu => ({
@@ -58,6 +106,9 @@ export default function HomePage() {
         const todayMenu = updatedData.find(menu => menu.dateLabel === 'Today')
         if (todayMenu) {
           setActiveTab(todayMenu._id)
+        } else {
+          // If no today menu, default to "all"
+          setActiveTab('all')
         }
       } catch (err) {
         console.error('Error loading menu:', err)
@@ -74,23 +125,27 @@ export default function HomePage() {
   useEffect(() => {
     // Function to check if date has changed
     const checkDateChange = () => {
-      const now = new Date()
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const now = new Date();
+      // Convert to IST
+      const offset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+      const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + offset);
+      
+      const today = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate());
       
       // If current date is different from the stored date
       if (today.getTime() !== currentDate.setHours(0, 0, 0, 0)) {
-        setCurrentDate(today)
+        setCurrentDate(today);
       }
     }
     
-    // Check immediately
-    checkDateChange()
+    // Check date change immediately
+    checkDateChange();
     
-    // Set up interval to check every minute
-    const intervalId = setInterval(checkDateChange, 60000)
+    // Set up interval to check for date change
+    const intervalId = setInterval(checkDateChange, 60000); // Check every minute
     
     // Clean up interval on unmount
-    return () => clearInterval(intervalId)
+    return () => clearInterval(intervalId);
   }, [currentDate])
 
   // Update date labels periodically
@@ -144,12 +199,13 @@ export default function HomePage() {
         className="max-w-7xl mx-auto space-y-8"
       >
         <div className="space-y-2 text-center">
-        <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-600 bg-clip-text text-transparent">
-  Chandigarh University Hostel Mess Menu
-</h1>
+          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 to-orange-600 bg-clip-text text-transparent">
+            Chandigarh University Hostel Mess Menu
+          </h1>
           <p className="text-lg text-muted-foreground ">
             Savor the flavors of the week
           </p>
+          <p className="text-sm text-blue-500">Today is {new Date().toLocaleDateString()} ({new Date().toDateString()})</p>
         </div>
 
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -189,7 +245,6 @@ export default function HomePage() {
     </div>
   )
 }
-// Update the MenuCard component to support dark mode
 
 function MenuCard({ menu, expanded = false }) {
   const date = new Date(menu.date)
@@ -210,7 +265,6 @@ function MenuCard({ menu, expanded = false }) {
     >
       <Card className={cn(
         "relative overflow-hidden backdrop-blur-sm",
-        // Remove the fixed bg-white/90 and use system color scheme
         "bg-card dark:bg-card",
         expanded ? "w-full" : "",
         isToday ? "border-2 border-blue-500/20 dark:border-blue-400/20" : ""
@@ -247,33 +301,32 @@ function MenuCard({ menu, expanded = false }) {
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-  <MealSection 
-    title={<>Breakfast <span className="text-green-500 text-sm">(7:30 AM - 9:00 AM)</span></>} 
-    content={menu.breakfast} 
-    icon={<Sunrise className="w-5 h-5 text-amber-500" />} 
-  />
-  <MealSection 
-    title={<>Lunch <span className="text-green-500 text-sm">(12:00 PM - 2:00 PM)</span></>} 
-    content={menu.lunch} 
-    icon={<Utensils className="w-5 h-5 text-emerald-500" />} 
-  />
-  <MealSection 
-    title={<>Snacks <span className="text-green-500 text-sm">(4:30 PM - 5:15 PM)</span></>} 
-    content={menu.snacks} 
-    icon={<Soup className="w-5 h-5 text-orange-500" />} 
-  />
-  <MealSection 
-    title={<>Dinner <span className="text-green-500 text-sm">(7:30 PM - 9:00 PM)</span></>} 
-    content={menu.dinner} 
-    icon={<Moon className="w-5 h-5 text-indigo-500" />} 
-  />
-</CardContent>
+          <MealSection 
+            title={<>Breakfast <span className="text-green-500 text-sm">(7:30 AM - 9:00 AM)</span></>} 
+            content={menu.breakfast} 
+            icon={<Sunrise className="w-5 h-5 text-amber-500" />} 
+          />
+          <MealSection 
+            title={<>Lunch <span className="text-green-500 text-sm">(12:00 PM - 2:00 PM)</span></>} 
+            content={menu.lunch} 
+            icon={<Utensils className="w-5 h-5 text-emerald-500" />} 
+          />
+          <MealSection 
+            title={<>Snacks <span className="text-green-500 text-sm">(4:30 PM - 5:15 PM)</span></>} 
+            content={menu.snacks} 
+            icon={<Soup className="w-5 h-5 text-orange-500" />} 
+          />
+          <MealSection 
+            title={<>Dinner <span className="text-green-500 text-sm">(7:30 PM - 9:00 PM)</span></>} 
+            content={menu.dinner} 
+            icon={<Moon className="w-5 h-5 text-indigo-500" />} 
+          />
+        </CardContent>
       </Card>
     </motion.div>
   )
 }
 
-// Update the MealSection component for dark mode compatibility
 function MealSection({ title, content, icon }) {
   return (
     <div className="space-y-3">
@@ -290,7 +343,6 @@ function MealSection({ title, content, icon }) {
   )
 }
 
-// Update LoadingSkeleton for dark mode
 function LoadingSkeleton() {
   return (
     <div className="max-w-7xl mx-auto space-y-8 py-8 px-4 sm:px-6 lg:px-8">
