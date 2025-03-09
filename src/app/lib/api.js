@@ -1,4 +1,4 @@
-const API_URL = 'hhttps://cumeal.vercel.app/api';
+const API_URL = 'https://cumeal.vercel.app/api';
 
 // Get all menus
 export async function getAllMenus() {
