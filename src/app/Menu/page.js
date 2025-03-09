@@ -156,7 +156,7 @@ export default function MenuPage() {
         
         // Try to fetch from API, if it fails, use mock data
         try {
-          const response = await fetch("http://localhost:8000/api/menu/week");
+          const response = await fetch("https://cumeal.vercel.app/api/menu/week");
           if (!response.ok) throw new Error("Failed to fetch menu data");
           const data = await response.json();
           setMenuData(data);
@@ -197,7 +197,7 @@ export default function MenuPage() {
       
       try {
         const response = await fetch(
-          `http://localhost:8000/api/menu/stats?startDate=${today.toISOString().split("T")[0]}`
+          `https://cumeal.vercel.app/api/menu/stats?startDate=${today.toISOString().split("T")[0]}`
         );
         if (!response.ok) throw new Error("Failed to fetch nutritional stats");
         const data = await response.json();
@@ -216,7 +216,7 @@ export default function MenuPage() {
   const fetchFavoriteItems = async () => {
   try {
     try {
-      const response = await fetch("http://localhost:8000/api/menu/favorites");
+      const response = await fetch("https://cumeal.vercel.app/api/menu/favorites");
       if (!response.ok) throw new Error("Failed to fetch favorite items");
       const data = await response.json();
       console.log("API favorite items:", data);
