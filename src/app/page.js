@@ -209,7 +209,7 @@ export default function HomePage() {
         </div>
 
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6 flex flex-wrap h-auto gap-2 bg-transparent">
+          <TabsList className="mb-6 flex flex-wrap h-auto gap-2 bg-transparent font-weight-900">
             <TabsTrigger 
               value="all" 
               className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
@@ -287,7 +287,7 @@ function MenuCard({ menu, expanded = false }) {
               )}
             </CardTitle>
             {!expanded && (
-              <div className="flex items-center text-muted-foreground text-sm">
+              <div className="flex items-center text-white text-sm">
                 <CalendarDays className="mr-1 h-4 w-4 text-purple-500 dark:text-purple-400" />
                 {formattedDate}
               </div>
