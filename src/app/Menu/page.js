@@ -112,6 +112,7 @@ const calorieDatabase = {
   "Rajma Rasila": 120,
   "Rice": 130,
   "Sabut matar Dal": 120,
+  "Sabut masoor Dal": 168,
   "Salad": 25,
   "Sev Tamatar": 110,
   "Sirca Onion": 40,
