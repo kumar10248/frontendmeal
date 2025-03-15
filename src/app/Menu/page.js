@@ -31,7 +31,7 @@ import { motion } from "framer-motion"
 // Improved calorie database organization
 const calorieDatabase = {
   // Breakfast items
-  "Aloo Paratha": 220,
+  "Stuffed Aloo Paratha": 240,
   "Aloo Pyaaz Parantha": 230,
   "Aloo Bhaji": 120,
   "Besan Chilla": 145,
@@ -42,7 +42,7 @@ const calorieDatabase = {
   "Boiled Egg": 155,
   "Butter": 717,//done
   "Butter & Jam": 350,
-  "Chapati": 260,
+  "Chapati": 300,
   "Chhole": 165,
   "Cornflakes": 380,
   "Curd": 60,
@@ -56,10 +56,10 @@ const calorieDatabase = {
   "Milk": 42,
   "Mix Pickle": 65,
   "Namkeen Dalia": 160,
-  "Plain Curd": 60,
+  "Plain Curd": 70,
   "Poha": 170,
   "Sweet dalia": 175,
-  "Tea": 20,
+  "Tea": 100,
   "Thepla": 240,
   "Tomato Ketchup": 110,
   "Upma": 165,
@@ -67,8 +67,8 @@ const calorieDatabase = {
 
   // Lunch/Dinner items
   "Aachari Ghiya": 100,
-  "Aloo Gobhi": 110,
-  "Aloo Gobi": 110,
+  "Aloo Gobhi": 111,
+  "fruit raitha": 60,
   "Aloo Matar": 115,
   "Amritsari Chhole": 145,
   "Boondi Raita": 75,
@@ -77,7 +77,8 @@ const calorieDatabase = {
   "Chicken Curry": 180,
   "Chicken Curry Homestyle": 185,
   "Cucumber Raita": 45,
-  "Coriander Rice": 160,
+  "Coriander Rice": 220,
+  "Beet cucumber salad": 40,
   "Dal": 120,
   "Dal Fry": 125,
   "Dal Makhani": 130,
@@ -87,7 +88,7 @@ const calorieDatabase = {
   "Garlic Fried Rice": 170,
   "Ghiya Raita": 50,
   "Green Mong Dal": 115,
-  "Green Salad": 25,
+  "Green Salad": 17,
   "Jeera Aloo": 130,
   "Jeera Rice": 140,
   "Kadai Paneer": 190,
@@ -108,11 +109,13 @@ const calorieDatabase = {
   "Paneer Butter Masala": 200,
   "Paneer Karachi": 195,
   "Rajma": 115,
-  "Rajma Masala": 120,
+  "Rajma Masala": 203,
   "Rajma Rasila": 120,
   "Rice": 130,
   "Sabut matar Dal": 120,
   "Sabut masoor Dal": 168,
+  "Tawa veg": 81,
+  "Veg Biryani": 170,
   "Salad": 25,
   "Sev Tamatar": 110,
   "Sirca Onion": 40,
@@ -127,6 +130,7 @@ const calorieDatabase = {
   "Veg Kofta Curry": 145,
   "Veg Nutri Keema": 130,
   "Yellow Dal Tadka": 125,
+  "Sewaiya": 157,
   
   // Snacks
   "Biscuit": 480,
