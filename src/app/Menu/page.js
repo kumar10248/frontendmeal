@@ -40,7 +40,7 @@ const calorieDatabase = {
   "Banana": 89,
   "Bread": 265,
   "Boiled Egg": 155,
-  "Butter": 717,
+  "Butter": 717,//done
   "Butter & Jam": 350,
   "Chapati": 260,
   "Chhole": 165,
