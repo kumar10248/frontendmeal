@@ -70,7 +70,7 @@ export default function Header() {
         <div className="flex items-center gap-6">
           <Link 
             href="/" 
-            className="flex items-center gap-2 font-bold text-xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"
+            className="flex items-center gap-2 font-bold text-xl bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-600 dark:to-orange-700 bg-clip-text text-transparent"
           >
             <Utensils className="h-6 w-6 text-primary" />
             MealFlow
