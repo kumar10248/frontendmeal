@@ -552,14 +552,15 @@ export default function CaloriesPage() {
             </motion.div>
           )}
         </div>
-
+  
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="relative overflow-x-auto pb-2">
-            <TabsList className="mb-6 flex h-auto bg-transparent px-2 py-2 gap-2 overflow-x-auto">
+          {/* Fixed tab list with proper overflow handling */}
+          <div className="relative mb-6">
+            <TabsList className="flex h-auto bg-transparent px-0 py-2 gap-2 w-full overflow-x-auto no-scrollbar">
               <TabsTrigger 
                 value="all" 
                 className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-teal-600 data-[state=active]:text-white
-                           dark:data-[state=active]:from-green-500 dark:data-[state=active]:to-teal-500 whitespace-nowrap"
+                           dark:data-[state=active]:from-green-500 dark:data-[state=active]:to-teal-500 whitespace-nowrap flex-shrink-0"
               >
                 Full Week
               </TabsTrigger>
@@ -568,7 +569,7 @@ export default function CaloriesPage() {
                   key={menu._id}
                   value={menu._id}
                   className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-teal-600 data-[state=active]:text-white
-                             dark:data-[state=active]:from-green-500 dark:data-[state=active]:to-teal-500 whitespace-nowrap"
+                             dark:data-[state=active]:from-green-500 dark:data-[state=active]:to-teal-500 whitespace-nowrap flex-shrink-0"
                 >
                   {menu.dateLabel}
                   {menu.dateLabel === 'Today' && (
@@ -578,7 +579,7 @@ export default function CaloriesPage() {
               ))}
             </TabsList>
           </div>
-
+  
           <TabsContent value="all" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {processedMenu.map((menu) => (
@@ -590,7 +591,7 @@ export default function CaloriesPage() {
               ))}
             </div>
           </TabsContent>
-
+  
           {processedMenu.map((menu) => (
             <TabsContent key={menu._id} value={menu._id}>
               <CalorieCardDetailed menu={menu} />
@@ -600,372 +601,382 @@ export default function CaloriesPage() {
       </motion.div>
     </div>
   )
-}
-
-// Summary card component for the week view
-function CalorieCardSummary({ menu, onViewDetails }) {
-  const date = new Date(menu.date)
-  const formattedDate = date.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
-
-  const isToday = menu.dateLabel === 'Today'
-  const isTomorrow = menu.dateLabel === 'Tomorrow'
-
-  return (
-    <motion.div
-      initial={{ scale: 0.98, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      whileHover={{ scale: 1.02 }}
-      transition={{ duration: 0.2 }}
-      className="h-full cursor-pointer"
-      onClick={onViewDetails}
-    >
-      <Card className={cn(
-        "h-full flex flex-col relative backdrop-blur-sm hover:shadow-md transition-shadow",
-        isToday ? "border-2 border-green-500/20 dark:border-green-400/20" : ""
-      )}>
-        {isToday && (
-          <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 transform rotate-45 translate-x-12 -translate-y-6" />
-        )}
-
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              {menu.dateLabel}
-              {isToday && (
-                <Badge className="ml-2 bg-gradient-to-r from-green-600 to-teal-600 dark:from-green-500 dark:to-teal-500">
-                  Today
-                </Badge>
-              )}
-              {isTomorrow && (
-                <Badge variant="outline" className="ml-2">Tomorrow</Badge>
-              )}
-            </CardTitle>
-          </div>
-          <CardDescription className="text-sm flex items-center">
-            <CalendarDays className="mr-1 h-4 w-4 text-teal-500 dark:text-teal-400" />
-            {formattedDate}
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="flex-grow">
-          <div className="space-y-3">
-            <div className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 p-3 rounded-lg flex justify-between items-center">
-              <span className="font-semibold">Daily Total:</span>
-              <span className={cn("font-bold", getCalorieColorClass(menu.calorieInfo.totalDaily, 'daily'))}>
-                {menu.calorieInfo.totalDaily} kcal
-              </span>
+  
+  // Improved Summary card component for the week view
+  function CalorieCardSummary({ menu, onViewDetails }) {
+    const date = new Date(menu.date)
+    const formattedDate = date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  
+    const isToday = menu.dateLabel === 'Today'
+    const isTomorrow = menu.dateLabel === 'Tomorrow'
+  
+    return (
+      <motion.div
+        initial={{ scale: 0.98, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.2 }}
+        className="h-full cursor-pointer"
+        onClick={onViewDetails}
+      >
+        <Card className={cn(
+          "h-full flex flex-col relative backdrop-blur-sm hover:shadow-md transition-shadow",
+          isToday ? "border-2 border-green-500/20 dark:border-green-400/20" : ""
+        )}>
+          {isToday && (
+            <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 transform rotate-45 translate-x-12 -translate-y-6 pointer-events-none" />
+          )}
+  
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center text-xl">
+                {menu.dateLabel}
+                {isToday && (
+                  <Badge className="ml-2 bg-gradient-to-r from-green-600 to-teal-600 dark:from-green-500 dark:to-teal-500">
+                    Today
+                  </Badge>
+                )}
+                {isTomorrow && (
+                  <Badge variant="outline" className="ml-2">Tomorrow</Badge>
+                )}
+              </CardTitle>
             </div>
-            
-            {/* Macronutrient distribution - visualization */}
-            <div className="flex items-center justify-center py-2 px-1 bg-white dark:bg-gray-800 rounded-md">
-              <div className="w-full h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
+            <CardDescription className="text-sm flex items-center">
+              <CalendarDays className="mr-1 h-4 w-4 text-teal-500 dark:text-teal-400" />
+              {formattedDate}
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="flex-grow">
+            <div className="space-y-3">
+              <div className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-950/30 dark:to-teal-950/30 p-3 rounded-lg flex justify-between items-center">
+                <span className="font-semibold">Daily Total:</span>
+                <span className={cn("font-bold", getCalorieColorClass(menu.calorieInfo.totalDaily, 'daily'))}>
+                  {menu.calorieInfo.totalDaily} kcal
+                </span>
+              </div>
+              
+              {/* Macronutrient distribution - visualization */}
+              <div className="flex flex-col space-y-1 bg-white dark:bg-gray-800 rounded-md p-2">
+                <div className="w-full h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
+                  <div 
+                    className="h-full bg-yellow-400 dark:bg-yellow-600" 
+                    style={{ width: `${menu.calorieInfo.macros.carbs * 100}%` }}
+                    title={`Carbs: ${Math.round(menu.calorieInfo.macros.carbs * 100)}%`}
+                  ></div>
+                  <div 
+                    className="h-full bg-green-400 dark:bg-green-600" 
+                    style={{ width: `${menu.calorieInfo.macros.protein * 100}%` }}
+                    title={`Protein: ${Math.round(menu.calorieInfo.macros.protein * 100)}%`}
+                  ></div>
+                  <div 
+                    className="h-full bg-blue-400 dark:bg-blue-600" 
+                    style={{ width: `${menu.calorieInfo.macros.fat * 100}%` }}
+                    title={`Fat: ${Math.round(menu.calorieInfo.macros.fat * 100)}%`}
+                  ></div>
+                </div>
+                <div className="flex text-xs justify-between">
+                  <span className="text-yellow-600 dark:text-yellow-400">Carbs {Math.round(menu.calorieInfo.macros.carbs * 100)}%</span>
+                  <span className="text-green-600 dark:text-green-400">Protein {Math.round(menu.calorieInfo.macros.protein * 100)}%</span>
+                  <span className="text-blue-600 dark:text-blue-400">Fat {Math.round(menu.calorieInfo.macros.fat * 100)}%</span>
+                </div>
+              </div>
+              
+              {/* Meal breakdown */}
+              <div className="space-y-2">
+                <MealSummaryRow 
+                  icon={<Sunrise className="w-4 h-4 text-orange-500" />}
+                  label="Breakfast"
+                  calories={menu.calorieInfo.breakfast.totalCalories}
+                  category="meal"
+                />
+                <MealSummaryRow 
+                  icon={<Utensils className="w-4 h-4 text-green-500" />}
+                  label="Lunch"
+                  calories={menu.calorieInfo.lunch.totalCalories}
+                  category="meal"
+                />
+                <MealSummaryRow 
+                  icon={<Soup className="w-4 h-4 text-amber-500" />}
+                  label="Snacks"
+                  calories={menu.calorieInfo.snacks.totalCalories}
+                  category="meal"
+                />
+                <MealSummaryRow 
+                  icon={<Moon className="w-4 h-4 text-blue-500" />}
+                  label="Dinner"
+                  calories={menu.calorieInfo.dinner.totalCalories}
+                  category="meal"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    )
+  }
+  
+  // Improved meal summary row component
+  function MealSummaryRow({ icon, label, calories, category = 'meal' }) {
+    return (
+      <div className="flex items-center justify-between text-sm p-1.5 bg-gray-50 dark:bg-gray-800/50 rounded">
+        <div className="flex items-center gap-2">
+          {icon}
+          <span>{label}</span>
+        </div>
+        <span className={getCalorieColorClass(calories, category)}>
+          {calories} kcal
+        </span>
+      </div>
+    )
+  }
+  
+  // Detailed card component for single day view
+  function CalorieCardDetailed({ menu }) {
+    const date = new Date(menu.date)
+    const formattedDate = date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+    
+    const isToday = menu.dateLabel === 'Today'
+    const isTomorrow = menu.dateLabel === 'Tomorrow'
+  
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
+        {/* Header section with date and total calories */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+          <div className="flex items-center gap-3">
+            <CalendarDays className="h-10 w-10 text-teal-500 dark:text-teal-400 p-2 bg-teal-50 dark:bg-teal-900/20 rounded-full" />
+            <div>
+              <h2 className="font-bold text-xl flex flex-wrap items-center gap-2">
+                {menu.dateLabel}
+                {isToday && (
+                  <Badge className="bg-gradient-to-r from-green-600 to-teal-600 dark:from-green-500 dark:to-teal-500">
+                    Today
+                  </Badge>
+                )}
+                {isTomorrow && (
+                  <Badge variant="outline">Tomorrow</Badge>
+                )}
+              </h2>
+              <p className="text-muted-foreground">{formattedDate}</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-end">
+            <div className="text-sm text-muted-foreground">Total Daily Calories</div>
+            <div className={cn(
+              "text-2xl font-bold",
+              getCalorieColorClass(menu.calorieInfo.totalDaily, 'daily')
+            )}>
+              {menu.calorieInfo.totalDaily} kcal
+            </div>
+          </div>
+        </div>
+        
+        {/* Macronutrient distribution */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <PieChart className="h-5 w-5 text-blue-500" />
+              Estimated Macronutrient Distribution
+            </CardTitle>
+            <CardDescription>
+              Based on typical macronutrient content of menu items
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-full h-8 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
                 <div 
-                  className="h-full bg-yellow-400 dark:bg-yellow-600" 
+                  className="h-full bg-yellow-400 dark:bg-yellow-600 transition-all duration-500" 
                   style={{ width: `${menu.calorieInfo.macros.carbs * 100}%` }}
-                  title={`Carbs: ${Math.round(menu.calorieInfo.macros.carbs * 100)}%`}
                 ></div>
                 <div 
-                  className="h-full bg-green-400 dark:bg-green-600" 
+                  className="h-full bg-green-400 dark:bg-green-600 transition-all duration-500" 
                   style={{ width: `${menu.calorieInfo.macros.protein * 100}%` }}
-                  title={`Protein: ${Math.round(menu.calorieInfo.macros.protein * 100)}%`}
                 ></div>
                 <div 
-                  className="h-full bg-blue-400 dark:bg-blue-600" 
+                  className="h-full bg-blue-400 dark:bg-blue-600 transition-all duration-500" 
                   style={{ width: `${menu.calorieInfo.macros.fat * 100}%` }}
-                  title={`Fat: ${Math.round(menu.calorieInfo.macros.fat * 100)}%`}
                 ></div>
               </div>
             </div>
-            <div className="flex text-xs justify-between px-1">
-              <span className="text-yellow-600 dark:text-yellow-400">Carbs {Math.round(menu.calorieInfo.macros.carbs * 100)}%</span>
-              <span className="text-green-600 dark:text-green-400">Protein {Math.round(menu.calorieInfo.macros.protein * 100)}%</span>
-              <span className="text-blue-600 dark:text-blue-400">Fat {Math.round(menu.calorieInfo.macros.fat * 100)}%</span>
-            </div>
             
-          
-            <div className="space-y-2">
-<MealSummaryRow 
-                icon={<Sunrise className="w-4 h-4 text-orange-500" />}
-                label="Breakfast"
-                calories={menu.calorieInfo.breakfast.totalCalories}
-                category="meal"
-              />
-              <MealSummaryRow 
-                icon={<Utensils className="w-4 h-4 text-green-500" />}
-                label="Lunch"
-                calories={menu.calorieInfo.lunch.totalCalories}
-                category="meal"
-              />
-              <MealSummaryRow 
-                icon={<Soup className="w-4 h-4 text-amber-500" />}
-                label="Snacks"
-                calories={menu.calorieInfo.snacks.totalCalories}
-                category="meal"
-              />
-              <MealSummaryRow 
-                icon={<Moon className="w-4 h-4 text-blue-500" />}
-                label="Dinner"
-                calories={menu.calorieInfo.dinner.totalCalories}
-                category="meal"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
+                <div className="text-yellow-600 dark:text-yellow-400 font-medium">Carbs</div>
+                <div className="text-2xl font-bold">{Math.round(menu.calorieInfo.macros.carbs * 100)}%</div>
+                <div className="text-xs text-muted-foreground">
+                  ~{Math.round(menu.calorieInfo.totalDaily * menu.calorieInfo.macros.carbs / 4)} kcal
+                </div>
+              </div>
+              
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                <div className="text-green-600 dark:text-green-400 font-medium">Protein</div>
+                <div className="text-2xl font-bold">{Math.round(menu.calorieInfo.macros.protein * 100)}%</div>
+                <div className="text-xs text-muted-foreground">
+                  ~{Math.round(menu.calorieInfo.totalDaily * menu.calorieInfo.macros.protein / 4)} kcal
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                <div className="text-blue-600 dark:text-blue-400 font-medium">Fat</div>
+                <div className="text-2xl font-bold">{Math.round(menu.calorieInfo.macros.fat * 100)}%</div>
+                <div className="text-xs text-muted-foreground">
+                  ~{Math.round(menu.calorieInfo.totalDaily * menu.calorieInfo.macros.fat / 9)} kcal
+                </div>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  )
-}
-
-// Meal summary row component for summary cards
-function MealSummaryRow({ icon, label, calories, category = 'meal' }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <div className="flex items-center gap-2">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <span className={getCalorieColorClass(calories, category)}>
-        {calories} kcal
-      </span>
-    </div>
-  )
-}
-
-// Detailed card component for single day view
-function CalorieCardDetailed({ menu }) {
-  const date = new Date(menu.date)
-  const formattedDate = date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
-  
-  const isToday = menu.dateLabel === 'Today'
-  const isTomorrow = menu.dateLabel === 'Tomorrow'
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
-    >
-      {/* Header section with date and total calories */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
-        <div className="flex items-center gap-3">
-          <CalendarDays className="h-10 w-10 text-teal-500 dark:text-teal-400 p-2 bg-teal-50 dark:bg-teal-900/20 rounded-full" />
-          <div>
-            <h2 className="font-bold text-xl">
-              {menu.dateLabel}
-              {isToday && (
-                <Badge className="ml-2 bg-gradient-to-r from-green-600 to-teal-600 dark:from-green-500 dark:to-teal-500">
-                  Today
-                </Badge>
-              )}
-              {isTomorrow && (
-                <Badge variant="outline" className="ml-2">Tomorrow</Badge>
-              )}
-            </h2>
-            <p className="text-muted-foreground">{formattedDate}</p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
         
-        <div className="flex flex-col items-end">
-          <div className="text-sm text-muted-foreground">Total Daily Calories</div>
-          <div className={cn(
-            "text-2xl font-bold",
-            getCalorieColorClass(menu.calorieInfo.totalDaily, 'daily')
-          )}>
-            {menu.calorieInfo.totalDaily} kcal
-          </div>
+        {/* Meal breakdown section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <MealDetailCard 
+            title="Breakfast" 
+            icon={<Sunrise className="h-5 w-5 text-orange-500" />}
+            menu={menu.breakfast}
+            calorieInfo={menu.calorieInfo.breakfast}
+          />
+          
+          <MealDetailCard 
+            title="Lunch" 
+            icon={<Utensils className="h-5 w-5 text-green-500" />}
+            menu={menu.lunch}
+            calorieInfo={menu.calorieInfo.lunch}
+          />
+          
+          <MealDetailCard 
+            title="Snacks" 
+            icon={<Soup className="h-5 w-5 text-amber-500" />}
+            menu={menu.snacks}
+            calorieInfo={menu.calorieInfo.snacks}
+          />
+          
+          <MealDetailCard 
+            title="Dinner" 
+            icon={<Moon className="h-5 w-5 text-blue-500" />}
+            menu={menu.dinner}
+            calorieInfo={menu.calorieInfo.dinner}
+          />
         </div>
-      </div>
-      
-      {/* Macronutrient distribution */}
+      </motion.div>
+    )
+  }
+  
+  // Improved detailed card for each meal with fixed badge layout
+  function MealDetailCard({ title, icon, menu, calorieInfo }) {
+    return (
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
-            <PieChart className="h-5 w-5 text-blue-500" />
-            Estimated Macronutrient Distribution
+            {icon}
+            {title}
+            <span className={cn(
+              "ml-auto text-base font-medium",
+              getCalorieColorClass(calorieInfo.totalCalories, 'meal')
+            )}>
+              {calorieInfo.totalCalories} kcal
+            </span>
           </CardTitle>
-          <CardDescription>
-            Based on typical macronutrient content of menu items
+          <CardDescription className="line-clamp-2">
+            {menu || "No menu information available"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center mb-3">
-            <div className="w-full h-8 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
-              <div 
-                className="h-full bg-yellow-400 dark:bg-yellow-600 transition-all duration-500" 
-                style={{ width: `${menu.calorieInfo.macros.carbs * 100}%` }}
-              ></div>
-              <div 
-                className="h-full bg-green-400 dark:bg-green-600 transition-all duration-500" 
-                style={{ width: `${menu.calorieInfo.macros.protein * 100}%` }}
-              ></div>
-              <div 
-                className="h-full bg-blue-400 dark:bg-blue-600 transition-all duration-500" 
-                style={{ width: `${menu.calorieInfo.macros.fat * 100}%` }}
-              ></div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg">
-              <div className="text-yellow-600 dark:text-yellow-400 font-medium">Carbs</div>
-              <div className="text-2xl font-bold">{Math.round(menu.calorieInfo.macros.carbs * 100)}%</div>
-              <div className="text-xs text-muted-foreground">
-                ~{Math.round(menu.calorieInfo.totalDaily * menu.calorieInfo.macros.carbs / 4)} kcal
+          {calorieInfo.itemsWithCalories.length > 0 ? (
+            <div className="space-y-3">
+              <div className="text-sm font-medium">Calorie breakdown:</div>
+              <div className="flex flex-wrap gap-2">
+                {calorieInfo.itemsWithCalories.map((item, index) => (
+                  <TooltipProvider key={index}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "flex items-center gap-1.5 py-1.5 px-3 bg-white dark:bg-gray-800 border h-auto",
+                            getItemBadgeClass(item.calories)
+                          )}
+                        >
+                          <span className="truncate max-w-24">{item.name}</span>
+                          <span className="shrink-0 whitespace-nowrap">{item.calories}</span>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{item.name}: {item.calories} kcal per serving</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
               </div>
+              
+              {calorieInfo.unknownItems.length > 0 && (
+                <div className="mt-4 text-sm text-muted-foreground">
+                  <span className="font-medium">Items without calorie data: </span>
+                  {calorieInfo.unknownItems.join(', ')}
+                </div>
+              )}
             </div>
-            
-            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-              <div className="text-green-600 dark:text-green-400 font-medium">Protein</div>
-              <div className="text-2xl font-bold">{Math.round(menu.calorieInfo.macros.protein * 100)}%</div>
-              <div className="text-xs text-muted-foreground">
-                ~{Math.round(menu.calorieInfo.totalDaily * menu.calorieInfo.macros.protein / 4)} kcal
-              </div>
+          ) : (
+            <div className="text-muted-foreground italic">
+              No detailed calorie information available for this meal.
             </div>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-              <div className="text-blue-600 dark:text-blue-400 font-medium">Fat</div>
-              <div className="text-2xl font-bold">{Math.round(menu.calorieInfo.macros.fat * 100)}%</div>
-              <div className="text-xs text-muted-foreground">
-                ~{Math.round(menu.calorieInfo.totalDaily * menu.calorieInfo.macros.fat / 9)} kcal
-              </div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
-      
-      {/* Meal breakdown section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MealDetailCard 
-          title="Breakfast" 
-          icon={<Sunrise className="h-5 w-5 text-orange-500" />}
-          menu={menu.breakfast}
-          calorieInfo={menu.calorieInfo.breakfast}
-        />
-        
-        <MealDetailCard 
-          title="Lunch" 
-          icon={<Utensils className="h-5 w-5 text-green-500" />}
-          menu={menu.lunch}
-          calorieInfo={menu.calorieInfo.lunch}
-        />
-        
-        <MealDetailCard 
-          title="Snacks" 
-          icon={<Soup className="h-5 w-5 text-amber-500" />}
-          menu={menu.snacks}
-          calorieInfo={menu.calorieInfo.snacks}
-        />
-        
-        <MealDetailCard 
-          title="Dinner" 
-          icon={<Moon className="h-5 w-5 text-blue-500" />}
-          menu={menu.dinner}
-          calorieInfo={menu.calorieInfo.dinner}
-        />
-      </div>
-    </motion.div>
-  )
-}
-
-// Detailed card for each meal
-function MealDetailCard({ title, icon, menu, calorieInfo }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center gap-2">
-          {icon}
-          {title}
-          <span className={cn(
-            "ml-auto text-base font-medium",
-            getCalorieColorClass(calorieInfo.totalCalories, 'meal')
-          )}>
-            {calorieInfo.totalCalories} kcal
-          </span>
-        </CardTitle>
-        <CardDescription>
-          {menu || "No menu information available"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {calorieInfo.itemsWithCalories.length > 0 ? (
-          <div className="space-y-3">
-            <div className="text-sm font-medium">Calorie breakdown:</div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {calorieInfo.itemsWithCalories.map((item, index) => (
-                <TooltipProvider key={index}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge 
-                        variant="outline" 
-                        className={cn(
-                          "justify-between gap-1.5 py-1.5 px-3 bg-white dark:bg-gray-800 border",
-                          getItemBadgeClass(item.calories)
-                        )}
-                      >
-                        <span className="truncate">{item.name}</span>
-                        <span className="shrink-0">{item.calories}</span>
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{item.name}: {item.calories} kcal per serving</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+    )
+  }
+  
+  // Add styles to help with badge display
+  // Add this to your global CSS or as a style tag in your component
+  // .no-scrollbar::-webkit-scrollbar {
+  //   display: none;
+  // }
+  // .no-scrollbar {
+  //   -ms-overflow-style: none;
+  //   scrollbar-width: none;
+  // }
+  
+  // Loading skeleton component
+  function LoadingSkeleton() {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50/30 to-purple-50/50 dark:from-blue-950/30 dark:to-purple-950/30 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="space-y-2 text-center">
+            <Skeleton className="h-10 w-80 mx-auto" />
+            <Skeleton className="h-6 w-96 mx-auto" />
+          </div>
+  
+          <div className="space-y-6">
+            <div className="flex h-auto gap-2 overflow-x-auto">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-10 w-28" />
               ))}
             </div>
-            
-            {calorieInfo.unknownItems.length > 0 && (
-              <div className="mt-4 text-sm text-muted-foreground">
-                <span className="font-medium">Items without calorie data: </span>
-                {calorieInfo.unknownItems.join(', ')}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-muted-foreground italic">
-            No detailed calorie information available for this meal.
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
-
-// Loading skeleton component
-function LoadingSkeleton() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50/30 to-purple-50/50 dark:from-blue-950/30 dark:to-purple-950/30 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="space-y-2 text-center">
-          <Skeleton className="h-10 w-80 mx-auto" />
-          <Skeleton className="h-6 w-96 mx-auto" />
-        </div>
-
-        <div className="space-y-6">
-          <div className="flex h-auto gap-2 overflow-x-auto">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-10 w-28" />
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-64">
-                <Skeleton className="h-full w-full" />
-              </div>
-            ))}
+  
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-64">
+                  <Skeleton className="h-full w-full" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 }
