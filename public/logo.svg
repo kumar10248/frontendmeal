@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7043" />
+      <stop offset="100%" stop-color="#FF9800" />
+    </linearGradient>
+    <linearGradient id="plateGradient" x1="30%" y1="30%" x2="70%" y2="70%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#F5F5F5" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#00000033"/>
+    </filter>
+  </defs>
+  
+  <!-- Background circle with gradient -->
+  <circle cx="150" cy="150" r="140" fill="url(#bgGradient)" filter="url(#shadow)" />
+  
+  <!-- Plate/dish circle with subtle gradient -->
+  <circle cx="150" cy="150" r="105" fill="url(#plateGradient)" stroke="#E0E0E0" stroke-width="2" />
+  
+  <!-- Decorative plate rim -->
+  <circle cx="150" cy="150" r="95" fill="none" stroke="#EEEEEE" stroke-width="1" />
+  <circle cx="150" cy="150" r="90" fill="none" stroke="#EEEEEE" stroke-width="1" />
+  
+  <!-- Elegant fork -->
+  <path d="M95 80 C95 95, 85 105, 85 120 L85 160 C85 168, 95 173, 100 165 C105 173, 115 168, 115 160 L115 120 C115 105, 105 95, 105 80" 
+        stroke="#424242" stroke-width="4" stroke-linecap="round" fill="none" />
+  
+  <!-- Elegant knife -->
+  <path d="M195 80 L195 160 C195 168, 205 173, 210 165 C215 173, 225 168, 225 160 L210 80" 
+        stroke="#424242" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M195 80 L210 80" stroke="#424242" stroke-width="4" stroke-linecap="round" />
+  
+  <!-- Culinary herb/garnish -->
+  <path d="M150 105 C145 95, 140 100, 140 90 C140 80, 150 75, 155 85 C160 75, 170 80, 170 90 C170 100, 165 95, 160 105" 
+        fill="#4CAF50" />
+  <path d="M145 105 L155 120" stroke="#4CAF50" stroke-width="2" />
+  
+  <!-- Stylized food on plate -->
+  <ellipse cx="150" cy="140" rx="40" ry="20" fill="#FFC107" opacity="0.8" />
+  
+  <!-- Elegant steam -->
+  <path d="M130 90 Q140 75, 150 85 Q160 70, 170 90" stroke="white" stroke-width="2" fill="none" opacity="0.8" />
+  <path d="M135 80 Q150 60, 165 80" stroke="white" stroke-width="2" fill="none" opacity="0.8" />
+  
+  <!-- Text element - stylized "CUISINE" -->
+  <path d="M130 200 A30 30 0 0 1 170 200" stroke="#FFF" stroke-width="6" fill="none" stroke-linecap="round" />
+  <path d="M125 212 L175 212" stroke="#FFF" stroke-width="6" fill="none" stroke-linecap="round" />
+</svg>

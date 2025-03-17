@@ -3,12 +3,16 @@ import { Inter } from 'next/font/google'
 import { ThemeProvider } from "./components/theme-provider"
 import Header from './components/header'
 import Footer from './components/footer'
+// Change this:
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'Cuisine | Chandigarh University Hostel Meal Menu',
   description: 'Explore daily hostel meal menus at Chandigarh University featuring nutritious breakfast, lunch, snacks, and dinner options. Plan your meals in advance with our comprehensive food schedule.',
+  icons: {
+    icon: '/logo.svg',
+  },
   keywords: 'Chandigarh University, hostel food, meal menu, breakfast, lunch, dinner, campus dining, CU hostel meals',
   openGraph: {
     title: 'Chandigarh University Hostel Meal Menu',
