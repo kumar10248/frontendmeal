@@ -44,7 +44,7 @@ export default function Header() {
   
   const navLinks = [
     { name: 'Home', href: '/', icon: Home },
-    { name: 'Calories', href: '/Menu', icon: Utensils },
+    { name: 'Calories', href: '/calorie', icon: Utensils },
     { name: 'Admin', href: 'https://meal-admin-5bcf.vercel.app/', icon: User, external: true },
     { name: 'Developer', href: 'https://devashish.top', icon: Terminal, external: true }
   ]
@@ -118,7 +118,7 @@ export default function Header() {
             className="flex items-center gap-2 font-bold text-xl"
           >
             <div className="relative overflow-hidden p-1">
-              <Utensils className="h-6 w-6 text-primary relative z-10" />
+              <Utensils className="h-6 w-6  relative z-10 text-amber-500  dark:to-orange-600" />
               <div className="absolute inset-0 bg-primary/10 rounded-full scale-0 hover:scale-100 transition-transform duration-300" />
             </div>
             <span className="bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-500 dark:to-orange-600 bg-clip-text text-transparent">
