@@ -95,7 +95,7 @@ const getMealInfo = () => {
   // Sort meal keys by start time
   const sortedMealKeys = Object.keys(mealTimes).sort((a, b) => mealTimes[a].start - mealTimes[b].start);
   
-  // Find current and next meal
+  // Find current meal first
   for (let i = 0; i < sortedMealKeys.length; i++) {
     const mealKey = sortedMealKeys[i];
     const meal = mealTimes[mealKey];
@@ -107,58 +107,77 @@ const getMealInfo = () => {
         status: 'now'
       };
       
-      // Next meal
-      const nextMealKey = sortedMealKeys[(i + 1) % sortedMealKeys.length];
+      // Calculate time until current meal ends
+      let timeToMealEnd = meal.end - currentTimeInMinutes;
+      timeUntilNext = `Ends in ${Math.floor(timeToMealEnd/60)}h ${timeToMealEnd%60}m`;
+      break;
+    }
+  }
+  
+  // If we're in a meal, find the next one
+  if (currentMeal) {
+    // Find the index of the current meal
+    const currentIndex = sortedMealKeys.indexOf(currentMeal.key);
+    // Get the next meal key, wrapping around to breakfast if needed
+    const nextIndex = (currentIndex + 1) % sortedMealKeys.length;
+    const nextMealKey = sortedMealKeys[nextIndex];
+    
+    // If we're going from dinner to breakfast, it's tomorrow
+    if (currentMeal.key === 'dinner' && nextMealKey === 'breakfast') {
+      nextMeal = { 
+        key: nextMealKey, 
+        ...mealTimes[nextMealKey],
+        status: 'tomorrow'
+      };
+      
+      // We already set timeUntilNext for the current meal ending
+    } else {
       nextMeal = { 
         key: nextMealKey, 
         ...mealTimes[nextMealKey],
         status: 'upcoming'
       };
       
-      // Calculate time until next meal ends
-      let timeToMealEnd = meal.end - currentTimeInMinutes;
-      timeUntilNext = `Ends in ${Math.floor(timeToMealEnd/60)}h ${timeToMealEnd%60}m`;
-      
-      break;
+      // We already set timeUntilNext for the current meal ending
     }
+  } 
+  // If we're not in any meal, find the next upcoming one
+  else {
+    // Try to find the next meal today
+    let foundNext = false;
     
-    // If not in any meal time, find the next one
-    if (currentMeal === null) {
-      let foundNext = false;
+    for (let j = 0; j < sortedMealKeys.length; j++) {
+      const checkMealKey = sortedMealKeys[j];
+      const checkMeal = mealTimes[checkMealKey];
       
-      for (let j = 0; j < sortedMealKeys.length; j++) {
-        const checkMealKey = sortedMealKeys[j];
-        const checkMeal = mealTimes[checkMealKey];
-        
-        if (currentTimeInMinutes < checkMeal.start) {
-          nextMeal = { 
-            key: checkMealKey, 
-            ...checkMeal,
-            status: 'upcoming'
-          };
-          
-          // Calculate time until next meal
-          let timeToMealStart = checkMeal.start - currentTimeInMinutes;
-          timeUntilNext = `Starts in ${Math.floor(timeToMealStart/60)}h ${timeToMealStart%60}m`;
-          
-          foundNext = true;
-          break;
-        }
-      }
-      
-      // If we've checked all meals and haven't found the next one,
-      // it means the next meal is tomorrow's breakfast
-      if (!foundNext) {
+      if (currentTimeInMinutes < checkMeal.start) {
         nextMeal = { 
-          key: 'breakfast', 
-          ...mealTimes['breakfast'],
-          status: 'tomorrow'
+          key: checkMealKey, 
+          ...checkMeal,
+          status: 'upcoming'
         };
         
-        // Calculate time until breakfast tomorrow
-        let timeToBreakfast = (24*60 - currentTimeInMinutes) + mealTimes['breakfast'].start;
-        timeUntilNext = `Starts in ${Math.floor(timeToBreakfast/60)}h ${timeToBreakfast%60}m`;
+        // Calculate time until next meal
+        let timeToMealStart = checkMeal.start - currentTimeInMinutes;
+        timeUntilNext = `Starts in ${Math.floor(timeToMealStart/60)}h ${timeToMealStart%60}m`;
+        
+        foundNext = true;
+        break;
       }
+    }
+    
+    // If we've checked all meals and haven't found the next one,
+    // it means we're after dinner and before midnight - next meal is tomorrow's breakfast
+    if (!foundNext) {
+      nextMeal = { 
+        key: 'breakfast', 
+        ...mealTimes['breakfast'],
+        status: 'tomorrow'
+      };
+      
+      // Calculate time until breakfast tomorrow
+      let timeToBreakfast = (24*60 - currentTimeInMinutes) + mealTimes['breakfast'].start;
+      timeUntilNext = `Starts in ${Math.floor(timeToBreakfast/60)}h ${timeToBreakfast%60}m`;
     }
   }
   
@@ -289,6 +308,7 @@ export default function HomePage() {
 
   // Find today's menu
   const todayMenu = weeklyMenu.find(menu => menu.dateLabel === 'Today');
+  const tomorrowMenu = weeklyMenu.find(menu => menu.dateLabel === 'Tomorrow');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4 sm:px-6 lg:px-8">
@@ -321,7 +341,7 @@ export default function HomePage() {
             </p>
             
             <AnimatePresence mode="wait">
-              {(mealInfo.currentMeal || mealInfo.nextMeal) && todayMenu && (
+              {(mealInfo.currentMeal || mealInfo.nextMeal) && (
                 <motion.div 
                   key={mealInfo.currentMeal ? 'current' : 'next'}
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -350,8 +370,8 @@ export default function HomePage() {
                         {mealInfo.nextMeal.label} ({mealInfo.nextMeal.timeLabel})
                       </p>
                       <p className="text-white/90 mt-1">
-                        {mealInfo.nextMeal.status === 'tomorrow' ? 
-                          'Check back tomorrow for the menu!' :
+                        {mealInfo.nextMeal.status === 'tomorrow' && tomorrowMenu ? 
+                          tomorrowMenu[mealInfo.nextMeal.key] :
                           todayMenu[mealInfo.nextMeal.key]}
                       </p>
                       <div className="mt-2 flex items-center justify-center text-white/80 text-sm">
@@ -480,38 +500,39 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
             content={menu.breakfast} 
             icon={<Coffee className="w-5 h-5 text-amber-500" />} 
             isActive={isToday && mealInfo.currentMeal?.key === 'breakfast'}
-            isUpcoming={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'breakfast'}
-            timeUntil={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'breakfast' ? mealInfo.timeUntilNext : null}
+            isUpcoming={isToday && mealInfo.nextMeal?.key === 'breakfast' && mealInfo.nextMeal?.status === 'upcoming'}
+            timeUntil={isToday && mealInfo.nextMeal?.key === 'breakfast' && mealInfo.nextMeal?.status === 'upcoming' ? mealInfo.timeUntilNext : null}
           />
           <MealSection 
             title={<>Lunch <span className="text-green-600 dark:text-green-400 text-sm font-normal">(12:00 PM - 2:00 PM)</span></>} 
             content={menu.lunch} 
             icon={<UtensilsCrossed className="w-5 h-5 text-amber-500" />} 
             isActive={isToday && mealInfo.currentMeal?.key === 'lunch'}
-            isUpcoming={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'lunch'}
-            timeUntil={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'lunch' ? mealInfo.timeUntilNext : null}
+            isUpcoming={isToday && mealInfo.nextMeal?.key === 'lunch' && mealInfo.nextMeal?.status === 'upcoming'}
+            timeUntil={isToday && mealInfo.nextMeal?.key === 'lunch' && mealInfo.nextMeal?.status === 'upcoming' ? mealInfo.timeUntilNext : null}
           />
           <MealSection 
             title={<>Snacks <span className="text-green-600 dark:text-green-400 text-sm font-normal">(4:30 PM - 5:15 PM)</span></>} 
             content={menu.snacks} 
             icon={<Sandwich className="w-5 h-5 text-amber-500" />} 
             isActive={isToday && mealInfo.currentMeal?.key === 'snacks'}
-            isUpcoming={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'snacks'}
-            timeUntil={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'snacks' ? mealInfo.timeUntilNext : null}
+            isUpcoming={isToday && mealInfo.nextMeal?.key === 'snacks' && mealInfo.nextMeal?.status === 'upcoming'}
+            timeUntil={isToday && mealInfo.nextMeal?.key === 'snacks' && mealInfo.nextMeal?.status === 'upcoming' ? mealInfo.timeUntilNext : null}
           />
           <MealSection 
             title={<>Dinner <span className="text-green-600 dark:text-green-400 text-sm font-normal">(7:30 PM - 9:00 PM)</span></>} 
             content={menu.dinner} 
             icon={<Soup className="w-5 h-5 text-amber-500" />} 
             isActive={isToday && mealInfo.currentMeal?.key === 'dinner'}
-            isUpcoming={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'dinner'}
-            timeUntil={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'dinner' ? mealInfo.timeUntilNext : null}
+            isUpcoming={isToday && mealInfo.nextMeal?.key === 'dinner' && mealInfo.nextMeal?.status === 'upcoming'}
+            timeUntil={isToday && mealInfo.nextMeal?.key === 'dinner' && mealInfo.nextMeal?.status === 'upcoming' ? mealInfo.timeUntilNext : null}
           />
         </CardContent>
       </Card>
     </motion.div>
   )
 }
+
 
 function MealSection({ title, content, icon, isActive, isUpcoming, timeUntil }) {
   return (
