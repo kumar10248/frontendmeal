@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { CalendarDays, AlertCircle, Coffee, Soup, UtensilsCrossed, Sandwich } from "lucide-react"
+import { CalendarDays, AlertCircle, Coffee, Soup, UtensilsCrossed, Sandwich, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -48,35 +48,144 @@ const getDateLabel = (date) => {
   return menuDate.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'Asia/Kolkata' });
 };
 
+// Get current IST time
+const getCurrentISTTime = () => {
+  const now = new Date();
+  // Convert to IST (UTC+5:30)
+  const offset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+  return new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + offset);
+};
+
+// Get appropriate greeting based on current IST time
+const getGreeting = () => {
+  const istTime = getCurrentISTTime();
+  const hour = istTime.getHours();
+  
+  if (hour >= 5 && hour < 12) {
+    return "Good Morning";
+  } else if (hour >= 12 && hour < 17) {
+    return "Good Afternoon";
+  } else if (hour >= 17 && hour < 22) {
+    return "Good Evening";
+  } else {
+    return "Good Night";
+  }
+};
+
+// Get current and next meal info
+const getMealInfo = () => {
+  const istTime = getCurrentISTTime();
+  const hour = istTime.getHours();
+  const minute = istTime.getMinutes();
+  const currentTimeInMinutes = hour * 60 + minute;
+  
+  // Define meal times in minutes since midnight
+  const mealTimes = {
+    breakfast: { start: 7*60+30, end: 9*60, label: 'Breakfast', timeLabel: '7:30 AM - 9:00 AM' },
+    lunch: { start: 12*60, end: 14*60, label: 'Lunch', timeLabel: '12:00 PM - 2:00 PM' },
+    snacks: { start: 16*60+30, end: 17*60+15, label: 'Snacks', timeLabel: '4:30 PM - 5:15 PM' },
+    dinner: { start: 19*60+30, end: 21*60, label: 'Dinner', timeLabel: '7:30 PM - 9:00 PM' }
+  };
+  
+  // Check if current time is within any meal timeframe
+  let currentMeal = null;
+  let nextMeal = null;
+  let timeUntilNext = null;
+  
+  // Sort meal keys by start time
+  const sortedMealKeys = Object.keys(mealTimes).sort((a, b) => mealTimes[a].start - mealTimes[b].start);
+  
+  // Find current and next meal
+  for (let i = 0; i < sortedMealKeys.length; i++) {
+    const mealKey = sortedMealKeys[i];
+    const meal = mealTimes[mealKey];
+    
+    if (currentTimeInMinutes >= meal.start && currentTimeInMinutes < meal.end) {
+      currentMeal = { 
+        key: mealKey, 
+        ...meal,
+        status: 'now'
+      };
+      
+      // Next meal
+      const nextMealKey = sortedMealKeys[(i + 1) % sortedMealKeys.length];
+      nextMeal = { 
+        key: nextMealKey, 
+        ...mealTimes[nextMealKey],
+        status: 'upcoming'
+      };
+      
+      // Calculate time until next meal ends
+      let timeToMealEnd = meal.end - currentTimeInMinutes;
+      timeUntilNext = `Ends in ${Math.floor(timeToMealEnd/60)}h ${timeToMealEnd%60}m`;
+      
+      break;
+    }
+    
+    // If not in any meal time, find the next one
+    if (currentMeal === null) {
+      let foundNext = false;
+      
+      for (let j = 0; j < sortedMealKeys.length; j++) {
+        const checkMealKey = sortedMealKeys[j];
+        const checkMeal = mealTimes[checkMealKey];
+        
+        if (currentTimeInMinutes < checkMeal.start) {
+          nextMeal = { 
+            key: checkMealKey, 
+            ...checkMeal,
+            status: 'upcoming'
+          };
+          
+          // Calculate time until next meal
+          let timeToMealStart = checkMeal.start - currentTimeInMinutes;
+          timeUntilNext = `Starts in ${Math.floor(timeToMealStart/60)}h ${timeToMealStart%60}m`;
+          
+          foundNext = true;
+          break;
+        }
+      }
+      
+      // If we've checked all meals and haven't found the next one,
+      // it means the next meal is tomorrow's breakfast
+      if (!foundNext) {
+        nextMeal = { 
+          key: 'breakfast', 
+          ...mealTimes['breakfast'],
+          status: 'tomorrow'
+        };
+        
+        // Calculate time until breakfast tomorrow
+        let timeToBreakfast = (24*60 - currentTimeInMinutes) + mealTimes['breakfast'].start;
+        timeUntilNext = `Starts in ${Math.floor(timeToBreakfast/60)}h ${timeToBreakfast%60}m`;
+      }
+    }
+  }
+  
+  return { currentMeal, nextMeal, timeUntilNext };
+};
+
 export default function HomePage() {
   const [weeklyMenu, setWeeklyMenu] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('all')
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [currentMeal, setCurrentMeal] = useState(null)
+  const [mealInfo, setMealInfo] = useState({ currentMeal: null, nextMeal: null, timeUntilNext: null })
+  const [greeting, setGreeting] = useState(getGreeting())
 
-  // Determine current meal time
+  // Update meal information and greeting
   useEffect(() => {
-    const determineCurrentMeal = () => {
-      const now = new Date();
-      const hour = now.getHours();
-      
-      if (hour >= 7 && hour < 10) {
-        setCurrentMeal('breakfast');
-      } else if (hour >= 12 && hour < 14) {
-        setCurrentMeal('lunch');
-      } else if (hour >= 16 && hour < 18) {
-        setCurrentMeal('snacks');
-      } else if (hour >= 19 && hour < 22) {
-        setCurrentMeal('dinner');
-      } else {
-        setCurrentMeal(null);
-      }
+    const updateTimeInfo = () => {
+      setMealInfo(getMealInfo());
+      setGreeting(getGreeting());
     };
     
-    determineCurrentMeal();
-    const intervalId = setInterval(determineCurrentMeal, 300000); // Check every 5 minutes
+    // Update immediately
+    updateTimeInfo();
+    
+    // Update every minute
+    const intervalId = setInterval(updateTimeInfo, 60000);
     
     return () => clearInterval(intervalId);
   }, []);
@@ -119,12 +228,8 @@ export default function HomePage() {
   useEffect(() => {
     // Function to check if date has changed
     const checkDateChange = () => {
-      const now = new Date();
-      // Convert to IST
-      const offset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
-      const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + offset);
-      
-      const today = new Date(istTime.getFullYear(), istTime.getMonth(), istTime.getDate());
+      const now = getCurrentISTTime();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       
       // If current date is different from the stored date
       if (today.getTime() !== currentDate.setHours(0, 0, 0, 0)) {
@@ -205,6 +310,9 @@ export default function HomePage() {
           </div>
           
           <div className="relative z-10 space-y-4">
+            <div className="mb-2">
+              <Badge className="text-amber-800 bg-amber-100">{greeting}</Badge>
+            </div>
             <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white">
               Hostel Mess Menu
             </h1>
@@ -212,22 +320,49 @@ export default function HomePage() {
               Your weekly meal schedule at Chandigarh University hostel
             </p>
             
-            {currentMeal && todayMenu && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="mt-6 bg-white/20 backdrop-blur-sm p-4 rounded-xl max-w-md mx-auto"
-              >
-                <Badge className="bg-white text-amber-600 mb-2">Happening Now</Badge>
-                <p className="text-white font-medium text-lg">
-                  {currentMeal === 'breakfast' && 'Breakfast (7:30 AM - 9:00 AM)'}
-                  {currentMeal === 'lunch' && 'Lunch (12:00 PM - 2:00 PM)'}
-                  {currentMeal === 'snacks' && 'Snacks (4:30 PM - 5:15 PM)'}
-                  {currentMeal === 'dinner' && 'Dinner (7:30 PM - 9:00 PM)'}
-                </p>
-                <p className="text-white/90 mt-1">{todayMenu[currentMeal]}</p>
-              </motion.div>
-            )}
+            <AnimatePresence mode="wait">
+              {(mealInfo.currentMeal || mealInfo.nextMeal) && todayMenu && (
+                <motion.div 
+                  key={mealInfo.currentMeal ? 'current' : 'next'}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="mt-6 bg-white/20 backdrop-blur-sm p-4 rounded-xl max-w-md mx-auto"
+                >
+                  {mealInfo.currentMeal ? (
+                    <>
+                      <Badge className="bg-green-500 text-white mb-2">Happening Now</Badge>
+                      <p className="text-white font-medium text-lg">
+                        {mealInfo.currentMeal.label} ({mealInfo.currentMeal.timeLabel})
+                      </p>
+                      <p className="text-white/90 mt-1">
+                        {todayMenu[mealInfo.currentMeal.key]}
+                      </p>
+                      <div className="mt-2 flex items-center justify-center text-white/80 text-sm">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {mealInfo.timeUntilNext}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Badge className="bg-amber-200 text-amber-800 mb-2">Coming Up</Badge>
+                      <p className="text-white font-medium text-lg">
+                        {mealInfo.nextMeal.label} ({mealInfo.nextMeal.timeLabel})
+                      </p>
+                      <p className="text-white/90 mt-1">
+                        {mealInfo.nextMeal.status === 'tomorrow' ? 
+                          'Check back tomorrow for the menu!' :
+                          todayMenu[mealInfo.nextMeal.key]}
+                      </p>
+                      <div className="mt-2 flex items-center justify-center text-white/80 text-sm">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {mealInfo.timeUntilNext}
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -259,14 +394,22 @@ export default function HomePage() {
             <TabsContent value="all" className="space-y-4 mt-6">
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {weeklyMenu.map((menu) => (
-                  <MenuCard key={menu._id} menu={menu} currentMeal={currentMeal} />
+                  <MenuCard 
+                    key={menu._id} 
+                    menu={menu} 
+                    mealInfo={mealInfo} 
+                  />
                 ))}
               </div>
             </TabsContent>
 
             {weeklyMenu.map((menu) => (
               <TabsContent key={menu._id} value={menu._id}>
-                <MenuCard menu={menu} expanded currentMeal={currentMeal} />
+                <MenuCard 
+                  menu={menu} 
+                  expanded 
+                  mealInfo={mealInfo} 
+                />
               </TabsContent>
             ))}
           </AnimatePresence>
@@ -276,7 +419,7 @@ export default function HomePage() {
   )
 }
 
-function MenuCard({ menu, expanded = false, currentMeal }) {
+function MenuCard({ menu, expanded = false, mealInfo }) {
   const date = new Date(menu.date)
   const formattedDate = date.toLocaleDateString('en-US', {
     month: 'long',
@@ -336,25 +479,33 @@ function MenuCard({ menu, expanded = false, currentMeal }) {
             title={<>Breakfast <span className="text-green-600 dark:text-green-400 text-sm font-normal">(7:30 AM - 9:00 AM)</span></>} 
             content={menu.breakfast} 
             icon={<Coffee className="w-5 h-5 text-amber-500" />} 
-            isActive={isToday && currentMeal === 'breakfast'}
+            isActive={isToday && mealInfo.currentMeal?.key === 'breakfast'}
+            isUpcoming={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'breakfast'}
+            timeUntil={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'breakfast' ? mealInfo.timeUntilNext : null}
           />
           <MealSection 
             title={<>Lunch <span className="text-green-600 dark:text-green-400 text-sm font-normal">(12:00 PM - 2:00 PM)</span></>} 
             content={menu.lunch} 
             icon={<UtensilsCrossed className="w-5 h-5 text-amber-500" />} 
-            isActive={isToday && currentMeal === 'lunch'}
+            isActive={isToday && mealInfo.currentMeal?.key === 'lunch'}
+            isUpcoming={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'lunch'}
+            timeUntil={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'lunch' ? mealInfo.timeUntilNext : null}
           />
           <MealSection 
             title={<>Snacks <span className="text-green-600 dark:text-green-400 text-sm font-normal">(4:30 PM - 5:15 PM)</span></>} 
             content={menu.snacks} 
             icon={<Sandwich className="w-5 h-5 text-amber-500" />} 
-            isActive={isToday && currentMeal === 'snacks'}
+            isActive={isToday && mealInfo.currentMeal?.key === 'snacks'}
+            isUpcoming={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'snacks'}
+            timeUntil={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'snacks' ? mealInfo.timeUntilNext : null}
           />
           <MealSection 
             title={<>Dinner <span className="text-green-600 dark:text-green-400 text-sm font-normal">(7:30 PM - 9:00 PM)</span></>} 
             content={menu.dinner} 
             icon={<Soup className="w-5 h-5 text-amber-500" />} 
-            isActive={isToday && currentMeal === 'dinner'}
+            isActive={isToday && mealInfo.currentMeal?.key === 'dinner'}
+            isUpcoming={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'dinner'}
+            timeUntil={isToday && !mealInfo.currentMeal && mealInfo.nextMeal?.key === 'dinner' ? mealInfo.timeUntilNext : null}
           />
         </CardContent>
       </Card>
@@ -362,25 +513,34 @@ function MenuCard({ menu, expanded = false, currentMeal }) {
   )
 }
 
-function MealSection({ title, content, icon, isActive }) {
+function MealSection({ title, content, icon, isActive, isUpcoming, timeUntil }) {
   return (
     <div className={cn(
       "space-y-3 p-4 rounded-xl transition-colors",
-      isActive ? "bg-amber-100/60 dark:bg-amber-900/30" : "hover:bg-amber-50 dark:hover:bg-slate-700/30"
+      isActive 
+        ? "bg-amber-100/60 dark:bg-amber-900/30" 
+        : isUpcoming 
+          ? "bg-amber-50/60 dark:bg-amber-800/20" 
+          : "hover:bg-amber-50 dark:hover:bg-slate-700/30"
     )}>
       <div className="flex items-center gap-3">
         <div className={cn(
           "p-2 rounded-lg",
           isActive 
             ? "bg-gradient-to-br from-amber-200 to-orange-200 dark:from-amber-700 dark:to-orange-700" 
-            : "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-slate-800 dark:to-slate-700"
+            : isUpcoming
+              ? "bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-800 dark:to-orange-800"
+              : "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-slate-800 dark:to-slate-700"
         )}>
           {icon}
         </div>
-        <h3 className="font-semibold text-lg text-amber-800 dark:text-amber-300">
+        <h3 className="font-semibold text-lg text-amber-800 dark:text-amber-300 flex items-center flex-wrap">
           {title}
           {isActive && (
             <Badge className="ml-2 bg-green-500 text-white text-xs">Now Serving</Badge>
+          )}
+          {isUpcoming && (
+            <Badge className="ml-2 bg-amber-300 text-amber-800 text-xs">Coming Up</Badge>
           )}
         </h3>
       </div>
@@ -388,9 +548,18 @@ function MealSection({ title, content, icon, isActive }) {
         "text-gray-700 dark:text-gray-300 pl-12 relative before:absolute before:left-8 before:top-2 before:bottom-2 before:w-px",
         isActive 
           ? "before:bg-gradient-to-b before:from-amber-300 before:to-orange-300 dark:before:from-amber-600 dark:before:to-orange-600 font-medium" 
-          : "before:bg-gradient-to-b before:from-amber-200 before:to-orange-200 dark:before:from-amber-800 dark:before:to-orange-800"
+          : isUpcoming
+            ? "before:bg-gradient-to-b before:from-amber-200 before:to-orange-200 dark:before:from-amber-700 dark:before:to-orange-700"
+            : "before:bg-gradient-to-b before:from-amber-200 before:to-orange-200 dark:before:from-amber-800 dark:before:to-orange-800"
       )}>
         {content}
+        
+        {timeUntil && (
+          <div className="mt-2 text-green-600 dark:text-green-400 text-xs font-medium flex items-center">
+            <Clock className="w-3 h-3 mr-1" />
+            {timeUntil}
+          </div>
+        )}
       </p>
     </div>
   )
