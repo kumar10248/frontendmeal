@@ -100,18 +100,19 @@ const getMealInfo = () => {
     const mealKey = sortedMealKeys[i];
     const meal = mealTimes[mealKey];
     
-    if (currentTimeInMinutes >= meal.start && currentTimeInMinutes < meal.end) {
-      currentMeal = { 
-        key: mealKey, 
-        ...meal,
-        status: 'now'
-      };
-      
-      // Calculate time until current meal ends
-      let timeToMealEnd = meal.end - currentTimeInMinutes;
-      timeUntilNext = `Ends in ${Math.floor(timeToMealEnd/60)}h ${timeToMealEnd%60}m`;
-      break;
-    }
+   // In the getMealInfo function
+if (currentTimeInMinutes >= meal.start && currentTimeInMinutes < meal.end) {
+  currentMeal = { 
+    key: mealKey, 
+    ...meal,
+    status: 'now'
+  };
+  
+  // Calculate time until current meal ends
+  let timeToMealEnd = meal.end - currentTimeInMinutes;
+  currentMeal.timeUntilEnd = `Ends in ${Math.floor(timeToMealEnd/60)}h ${timeToMealEnd%60}m`;
+  break;
+}
   }
   
   // If we're in a meal, find the next one
@@ -534,7 +535,7 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
 }
 
 
-function MealSection({ title, content, icon, isActive, isUpcoming, timeUntil }) {
+function MealSection({ title, content, icon, isActive, isUpcoming, timeUntil, timeUntilEnd }) {
   return (
     <div className={cn(
       "space-y-3 p-4 rounded-xl transition-colors",
@@ -579,6 +580,13 @@ function MealSection({ title, content, icon, isActive, isUpcoming, timeUntil }) 
           <div className="mt-2 text-green-600 dark:text-green-400 text-xs font-medium flex items-center">
             <Clock className="w-3 h-3 mr-1" />
             {timeUntil}
+          </div>
+        )}
+        
+        {isActive && timeUntilEnd && (
+          <div className="mt-2 text-green-600 dark:text-green-400 text-xs font-medium flex items-center">
+            <Clock className="w-3 h-3 mr-1" />
+            {timeUntilEnd}
           </div>
         )}
       </p>
