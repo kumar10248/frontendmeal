@@ -100,19 +100,18 @@ const getMealInfo = () => {
     const mealKey = sortedMealKeys[i];
     const meal = mealTimes[mealKey];
     
-   // In the getMealInfo function
-if (currentTimeInMinutes >= meal.start && currentTimeInMinutes < meal.end) {
-  currentMeal = { 
-    key: mealKey, 
-    ...meal,
-    status: 'now'
-  };
-  
-  // Calculate time until current meal ends
-  let timeToMealEnd = meal.end - currentTimeInMinutes;
-  currentMeal.timeUntilEnd = `Ends in ${Math.floor(timeToMealEnd/60)}h ${timeToMealEnd%60}m`;
-  break;
-}
+    if (currentTimeInMinutes >= meal.start && currentTimeInMinutes < meal.end) {
+      currentMeal = { 
+        key: mealKey, 
+        ...meal,
+        status: 'now'
+      };
+      
+      // Calculate time until current meal ends
+      let timeToMealEnd = meal.end - currentTimeInMinutes;
+      currentMeal.timeUntilEnd = `Ends in ${Math.floor(timeToMealEnd/60)}h ${timeToMealEnd%60}m`;
+      break;
+    }
   }
   
   // If we're in a meal, find the next one
@@ -130,17 +129,25 @@ if (currentTimeInMinutes >= meal.start && currentTimeInMinutes < meal.end) {
         ...mealTimes[nextMealKey],
         status: 'tomorrow'
       };
-      
-      // We already set timeUntilNext for the current meal ending
     } else {
       nextMeal = { 
         key: nextMealKey, 
         ...mealTimes[nextMealKey],
         status: 'upcoming'
       };
-      
-      // We already set timeUntilNext for the current meal ending
     }
+    
+    // Calculate time until next meal starts
+    let timeToNextMeal;
+    if (nextMeal.status === 'tomorrow') {
+      // It's tomorrow's breakfast
+      timeToNextMeal = (24*60 - currentTimeInMinutes) + mealTimes[nextMealKey].start;
+    } else {
+      // It's later today
+      timeToNextMeal = mealTimes[nextMealKey].start - currentTimeInMinutes;
+    }
+    timeUntilNext = `Starts in ${Math.floor(timeToNextMeal/60)}h ${timeToNextMeal%60}m`;
+    
   } 
   // If we're not in any meal, find the next upcoming one
   else {
@@ -357,11 +364,11 @@ export default function HomePage() {
                         {mealInfo.currentMeal.label} ({mealInfo.currentMeal.timeLabel})
                       </p>
                       <p className="text-white/90 mt-1">
-                        {todayMenu[mealInfo.currentMeal.key]}
+                        {todayMenu && todayMenu[mealInfo.currentMeal.key]}
                       </p>
                       <div className="mt-2 flex items-center justify-center text-white/80 text-sm">
                         <Clock className="w-4 h-4 mr-1" />
-                        {mealInfo.timeUntilNext}
+                        {mealInfo.currentMeal.timeUntilEnd}
                       </div>
                     </>
                   ) : (
@@ -373,7 +380,7 @@ export default function HomePage() {
                       <p className="text-white/90 mt-1">
                         {mealInfo.nextMeal.status === 'tomorrow' && tomorrowMenu ? 
                           tomorrowMenu[mealInfo.nextMeal.key] :
-                          todayMenu[mealInfo.nextMeal.key]}
+                          todayMenu && todayMenu[mealInfo.nextMeal.key]}
                       </p>
                       <div className="mt-2 flex items-center justify-center text-white/80 text-sm">
                         <Clock className="w-4 h-4 mr-1" />
@@ -503,6 +510,7 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
             isActive={isToday && mealInfo.currentMeal?.key === 'breakfast'}
             isUpcoming={isToday && mealInfo.nextMeal?.key === 'breakfast' && mealInfo.nextMeal?.status === 'upcoming'}
             timeUntil={isToday && mealInfo.nextMeal?.key === 'breakfast' && mealInfo.nextMeal?.status === 'upcoming' ? mealInfo.timeUntilNext : null}
+            timeUntilEnd={isToday && mealInfo.currentMeal?.key === 'breakfast' ? mealInfo.currentMeal.timeUntilEnd : null}
           />
           <MealSection 
             title={<>Lunch <span className="text-green-600 dark:text-green-400 text-sm font-normal">(12:00 PM - 2:00 PM)</span></>} 
@@ -511,6 +519,7 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
             isActive={isToday && mealInfo.currentMeal?.key === 'lunch'}
             isUpcoming={isToday && mealInfo.nextMeal?.key === 'lunch' && mealInfo.nextMeal?.status === 'upcoming'}
             timeUntil={isToday && mealInfo.nextMeal?.key === 'lunch' && mealInfo.nextMeal?.status === 'upcoming' ? mealInfo.timeUntilNext : null}
+            timeUntilEnd={isToday && mealInfo.currentMeal?.key === 'lunch' ? mealInfo.currentMeal.timeUntilEnd : null}
           />
           <MealSection 
             title={<>Snacks <span className="text-green-600 dark:text-green-400 text-sm font-normal">(4:30 PM - 5:15 PM)</span></>} 
@@ -519,6 +528,7 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
             isActive={isToday && mealInfo.currentMeal?.key === 'snacks'}
             isUpcoming={isToday && mealInfo.nextMeal?.key === 'snacks' && mealInfo.nextMeal?.status === 'upcoming'}
             timeUntil={isToday && mealInfo.nextMeal?.key === 'snacks' && mealInfo.nextMeal?.status === 'upcoming' ? mealInfo.timeUntilNext : null}
+            timeUntilEnd={isToday && mealInfo.currentMeal?.key === 'snacks' ? mealInfo.currentMeal.timeUntilEnd : null}
           />
           <MealSection 
             title={<>Dinner <span className="text-green-600 dark:text-green-400 text-sm font-normal">(7:30 PM - 9:00 PM)</span></>} 
@@ -527,6 +537,7 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
             isActive={isToday && mealInfo.currentMeal?.key === 'dinner'}
             isUpcoming={isToday && mealInfo.nextMeal?.key === 'dinner' && mealInfo.nextMeal?.status === 'upcoming'}
             timeUntil={isToday && mealInfo.nextMeal?.key === 'dinner' && mealInfo.nextMeal?.status === 'upcoming' ? mealInfo.timeUntilNext : null}
+            timeUntilEnd={isToday && mealInfo.currentMeal?.key === 'dinner' ? mealInfo.currentMeal.timeUntilEnd : null}
           />
         </CardContent>
       </Card>
@@ -534,25 +545,20 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
   )
 }
 
-
 function MealSection({ title, content, icon, isActive, isUpcoming, timeUntil, timeUntilEnd }) {
   return (
     <div className={cn(
       "space-y-3 p-4 rounded-xl transition-colors",
       isActive 
         ? "bg-amber-100/60 dark:bg-amber-900/30" 
-        : isUpcoming 
-          ? "bg-amber-50/60 dark:bg-amber-800/20" 
-          : "hover:bg-amber-50 dark:hover:bg-slate-700/30"
+        : "hover:bg-amber-50 dark:hover:bg-slate-700/30"
     )}>
       <div className="flex items-center gap-3">
         <div className={cn(
           "p-2 rounded-lg",
           isActive 
             ? "bg-gradient-to-br from-amber-200 to-orange-200 dark:from-amber-700 dark:to-orange-700" 
-            : isUpcoming
-              ? "bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-800 dark:to-orange-800"
-              : "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-slate-800 dark:to-slate-700"
+            : "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-slate-800 dark:to-slate-700"
         )}>
           {icon}
         </div>
@@ -570,9 +576,7 @@ function MealSection({ title, content, icon, isActive, isUpcoming, timeUntil, ti
         "text-gray-700 dark:text-gray-300 pl-12 relative before:absolute before:left-8 before:top-2 before:bottom-2 before:w-px",
         isActive 
           ? "before:bg-gradient-to-b before:from-amber-300 before:to-orange-300 dark:before:from-amber-600 dark:before:to-orange-600 font-medium" 
-          : isUpcoming
-            ? "before:bg-gradient-to-b before:from-amber-200 before:to-orange-200 dark:before:from-amber-700 dark:before:to-orange-700"
-            : "before:bg-gradient-to-b before:from-amber-200 before:to-orange-200 dark:before:from-amber-800 dark:before:to-orange-800"
+          : "before:bg-gradient-to-b before:from-amber-200 before:to-orange-200 dark:before:from-amber-800 dark:before:to-orange-800"
       )}>
         {content}
         
@@ -584,7 +588,7 @@ function MealSection({ title, content, icon, isActive, isUpcoming, timeUntil, ti
         )}
         
         {isActive && timeUntilEnd && (
-          <div className="mt-2 text-green-600 dark:text-green-400 text-xs font-medium flex items-center">
+          <div className="mt-2 text-orange-600 dark:text-orange-400 text-xs font-medium flex items-center">
             <Clock className="w-3 h-3 mr-1" />
             {timeUntilEnd}
           </div>
