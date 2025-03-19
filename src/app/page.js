@@ -584,17 +584,15 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-          <MealSection
-            title={
-              <div className="flex items-center flex-wrap">
-                <span className="mr-1">Breakfast</span>
-                <span className="text-green-600 dark:text-green-400 font-normal text-sm whitespace-nowrap">
-                  (7:30 AM - 9:00 AM)
-                </span>
-              </div>
-            }
-            content={menu.breakfast}
-            icon={<Coffee className="w-5 h-5 text-amber-500" />}
+        <MealSection 
+  title={
+    <div className="flex items-center flex-wrap">
+      <span className="mr-1">Breakfast</span>
+      <span className="text-green-600 dark:text-green-400 text-xs whitespace-nowrap">(7:30 AM - 9:00 AM)</span>
+    </div>
+  } 
+  content={menu.breakfast} 
+  icon={<Coffee className="w-5 h-5 text-amber-500" />} 
             isActive={isToday && mealInfo.currentMeal?.key === "breakfast"}
             isUpcoming={
               isToday &&
