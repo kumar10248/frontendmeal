@@ -360,7 +360,7 @@ export default function HomePage() {
                   {mealInfo.currentMeal ? (
                     <>
                       <Badge className="bg-green-500 text-white mb-2">Happening Now</Badge>
-                      <p className="text-white font-medium text-[17px]">
+                      <p className="text-white font-medium text-sm">
                         {mealInfo.currentMeal.label} ({mealInfo.currentMeal.timeLabel})
                       </p>
                       <p className="text-white/90 mt-1">
