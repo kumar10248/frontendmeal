@@ -136,7 +136,7 @@ const calorieDatabase = {
     "Sproutes Salad": 35,
     "Steamed Rice": 130,
     "Streamed Rice": 130,
-    "Tamatar ka Salan": 120,
+    "Tamatar Salan": 120,
     "Tawa Veg": 125,
     "Thai Papaya Salad": 45,
     "Veg Dum Biryani": 190,
@@ -145,6 +145,9 @@ const calorieDatabase = {
     "Veg Manchurian": 185,
     "Veg Nutri Keema": 170,
     "Yellow Dal Tadka": 135,
+    "Lobiya Masala": 150,
+    "Dimer jhol": 180,
+    "Sirka Onion": 35,
   
   // Snacks
   "Biscuit": 450,
