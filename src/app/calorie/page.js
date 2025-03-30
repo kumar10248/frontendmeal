@@ -148,6 +148,7 @@ const calorieDatabase = {
     "Lobiya Masala": 150,
     "Dimer jhol": 180,
     "Sirka Onion": 35,
+    "Green chilli": 40,
   
   // Snacks
   "Biscuit": 450,
