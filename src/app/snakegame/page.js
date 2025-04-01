@@ -1156,52 +1156,120 @@ export default function EnhancedSnakeGame() {
       // Mobile controls
       const renderMobileControls = () => (
         <div className="mt-4 flex flex-col items-center z-20 md:hidden">
-          <div className="flex flex-col items-center bg-gray-800 bg-opacity-50 p-3 rounded-xl">
+          <div className="flex flex-col items-center bg-gray-800 bg-opacity-70 p-4 rounded-xl w-full max-w-sm">
+            {/* Top row */}
             <button 
-              className="w-16 h-16 bg-gray-800 bg-opacity-80 rounded-lg mb-2 flex items-center justify-center text-white text-2xl"
-              onClick={() => handleTouchStart('UP')}
+              className="w-16 h-16 bg-gray-700 rounded-lg mb-3 flex items-center justify-center text-white text-2xl shadow-lg active:bg-gray-600 touch-manipulation"
+              onTouchStart={() => handleTouchStart('UP')}
             >
               ↑
             </button>
-            <div className="flex space-x-4">
+            
+            {/* Middle row */}
+            <div className="flex space-x-8 mb-3">
               <button 
-                className="w-16 h-16 bg-gray-800 bg-opacity-80 rounded-lg flex items-center justify-center text-white text-2xl"
-                onClick={() => handleTouchStart('LEFT')}
+                className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg active:bg-gray-600 touch-manipulation"
+                onTouchStart={() => handleTouchStart('LEFT')}
               >
                 ←
               </button>
+              
+              {/* Center button for pause */}
               <button 
-                className="w-16 h-16 bg-gray-800 bg-opacity-80 rounded-lg flex items-center justify-center text-white text-2xl"
-                onClick={() => handleTouchStart('DOWN')}
+                className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center text-white text-xl shadow-lg active:bg-gray-500 touch-manipulation"
+                onClick={() => setIsPaused(prev => !prev)}
               >
-                ↓
+                {isPaused ? '▶️' : '⏸️'}
               </button>
+              
               <button 
-                className="w-16 h-16 bg-gray-800 bg-opacity-80 rounded-lg flex items-center justify-center text-white text-2xl"
-                onClick={() => handleTouchStart('RIGHT')}
+                className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg active:bg-gray-600 touch-manipulation"
+                onTouchStart={() => handleTouchStart('RIGHT')}
               >
                 →
               </button>
             </div>
+            
+            {/* Bottom row */}
+            <button 
+              className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg active:bg-gray-600 touch-manipulation"
+              onTouchStart={() => handleTouchStart('DOWN')}
+            >
+              ↓
+            </button>
           </div>
         </div>
       );
       
+      // Update the game board container for better mobile responsiveness
+      const renderGameBoard = () => (
+        <div 
+          className={`relative ${currentTheme.gridBg} rounded-lg overflow-hidden mx-auto`}
+          style={{ 
+            width: GRID_SIZE * CELL_SIZE, 
+            height: GRID_SIZE * CELL_SIZE,
+            maxWidth: "95vw",
+            maxHeight: "55vh", // Reduced from 70vh to make more room for controls
+            aspectRatio: "1/1" // Maintain square aspect ratio
+          }}
+        >
+          {renderGrid()}
+          
+          {!gameStarted && renderStartScreen()}
+          {gameOver && renderGameOverScreen()}
+          {isCountingDown && renderCountdown()}
+          {tutorial && renderTutorial()}
+          
+          {/* Remove the top control bar since we integrated pause into the d-pad */}
+          
+          {/* Pause screen */}
+          {isPaused && (
+            <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center z-30">
+              <h2 className={`text-3xl font-bold mb-6 ${currentTheme.text}`}>Paused</h2>
+              <div className="flex flex-col space-y-4">
+                <button 
+                  className={`${currentTheme.buttonPrimary} py-3 px-8 rounded-lg font-bold text-white text-lg w-40`}
+                  onClick={() => setIsPaused(false)}
+                >
+                  Resume
+                </button>
+                <button 
+                  className={`${currentTheme.buttonSecondary} py-3 px-8 rounded-lg text-white text-lg w-40`}
+                  onClick={() => {
+                    setGameStarted(false);
+                    setIsPaused(false);
+                    if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+                    if (effectsTimerRef.current) clearInterval(effectsTimerRef.current);
+                    if (powerUpTimerRef.current) clearInterval(powerUpTimerRef.current);
+                  }}
+                >
+                  Main Menu
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+      
+      // Updated main return to better handle mobile layout
       return (
-        <div className={`min-h-screen ${currentTheme.background} flex flex-col items-center justify-center p-4`}>
+        <div className={`min-h-screen ${currentTheme.background} flex flex-col items-center p-2 md:p-4`}>
           <Head>
             <title>Snake Bytes | Advanced Snake Game</title>
             <meta name="description" content="An enhanced version of the classic Snake game with multiple modes, power-ups and special features" />
             <link rel="icon" href="/favicon.ico" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            {/* Add touch-action meta tag to prevent browser gestures */}
+            <meta name="apple-mobile-web-app-capable" content="yes" />
+            <meta name="mobile-web-app-capable" content="yes" />
           </Head>
           
-          <main className="flex flex-col items-center w-full">
-            {/* Game title and score */}
-            <div className={`${currentTheme.scoreBoard} mb-2 p-4 rounded-lg w-full max-w-md flex justify-between items-center`}>
+          <main className="flex flex-col items-center w-full max-w-md mx-auto">
+            {/* Game title and score - simplified for mobile */}
+            <div className={`${currentTheme.scoreBoard} mb-2 p-3 rounded-lg w-full flex justify-between items-center text-sm md:text-base`}>
               <div>
-                <h1 className="text-xl font-bold">Snake Bytes</h1>
-                <p className="text-sm opacity-75">{gameMode === 'classic' ? 'Classic Mode' : gameMode === 'adventure' ? 'Adventure Mode' : 'Hardcore Mode'}</p>
+                <h1 className="text-lg md:text-xl font-bold">Snake Bytes</h1>
+                <p className="text-xs md:text-sm opacity-80">{gameMode === 'classic' ? 'Classic' : gameMode === 'adventure' ? 'Adventure' : 'Hardcore'}</p>
               </div>
               <div className="text-right">
                 <p>Score: <span className="font-bold">{score}</span></p>
@@ -1210,98 +1278,23 @@ export default function EnhancedSnakeGame() {
             </div>
             
             {/* Game board */}
-            <div 
-              className={`relative ${currentTheme.gridBg} rounded-lg overflow-hidden`}
-              style={{ 
-                width: GRID_SIZE * CELL_SIZE, 
-                height: GRID_SIZE * CELL_SIZE,
-                maxWidth: "95vw",
-                maxHeight: "70vh"
-              }}
-            >
-              {renderGrid()}
-              
-              {!gameStarted && renderStartScreen()}
-              {gameOver && renderGameOverScreen()}
-              {isCountingDown && renderCountdown()}
-              {tutorial && renderTutorial()}
-              
-              {/* Top control bar (mobile) */}
-              {gameStarted && !gameOver && !isCountingDown && (
-                <div className="absolute top-2 left-0 right-0 flex justify-between px-2 z-20 md:hidden">
-                  <button 
-                    className="w-12 h-12 rounded-full bg-gray-800 bg-opacity-70 flex items-center justify-center text-white text-xl"
-                    onClick={() => {
-                      setGameStarted(false);
-                      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
-                      if (effectsTimerRef.current) clearInterval(effectsTimerRef.current);
-                      if (powerUpTimerRef.current) clearInterval(powerUpTimerRef.current);
-                    }}
-                  >
-                    ⇦
-                  </button>
-                  
-                  <button 
-                    className="w-12 h-12 rounded-full bg-gray-800 bg-opacity-70 flex items-center justify-center text-white text-xl"
-                    onClick={() => setIsPaused(prev => !prev)}
-                  >
-                    {isPaused ? '▶️' : '⏸️'}
-                  </button>
-                </div>
-              )}
-              
-              {/* Pause screen */}
-              {isPaused && (
-                <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-30">
-                  <h2 className={`text-4xl font-bold mb-8 ${currentTheme.text}`}>Paused</h2>
-                  <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-                    <button 
-                      className={`${currentTheme.buttonPrimary} py-3 px-8 rounded-lg font-bold text-white text-lg`}
-                      onClick={() => setIsPaused(false)}
-                    >
-                      Resume
-                    </button>
-                    <button 
-                      className={`${currentTheme.buttonSecondary} py-3 px-8 rounded-lg text-white text-lg`}
-                      onClick={() => {
-                        setGameStarted(false);
-                        setIsPaused(false);
-                        if (gameLoopRef.current) clearInterval(gameLoopRef.current);
-                        if (effectsTimerRef.current) clearInterval(effectsTimerRef.current);
-                        if (powerUpTimerRef.current) clearInterval(powerUpTimerRef.current);
-                      }}
-                    >
-                      Main Menu
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            {renderGameBoard()}
             
-            {/* Mobile controls outside the grid */}
+            {/* Mobile controls - only show when game is active */}
             {gameStarted && !gameOver && renderMobileControls()}
             
-            {/* Game info bar */}
-            <div className={`${currentTheme.scoreBoard} mt-2 p-2 rounded-lg w-full max-w-md flex justify-between items-center`}>
+            {/* Game info bar - simplified for mobile */}
+            <div className={`${currentTheme.scoreBoard} mt-2 p-2 rounded-lg w-full flex justify-between items-center text-sm`}>
               <div className="flex items-center">
                 <span className="mr-2">Level: {level}</span>
                 <span>Lives: {[...Array(Math.max(0, lives))].map((_, i) => <span key={i}>❤️</span>)}</span>
               </div>
-              <div className="hidden md:block">
-                {gameStarted && !gameOver && 
-                  <button 
-                    className={`${currentTheme.buttonSecondary} py-1 px-3 text-sm rounded text-white`}
-                    onClick={() => setIsPaused(prev => !prev)}
-                  >
-                    {isPaused ? 'Resume' : 'Pause'}
-                  </button>
-                }
-              </div>
+              {/* Removed the desktop pause button since we integrated it into mobile controls */}
             </div>
             
-            {/* Active power-ups display */}
+            {/* Active power-ups display - more compact for mobile */}
             {activePowerUps.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2 justify-center w-full max-w-md">
+              <div className="mt-2 flex flex-wrap gap-1 justify-center w-full">
                 {activePowerUps.map((powerUp, index) => (
                   <div 
                     key={`active-${index}`} 
