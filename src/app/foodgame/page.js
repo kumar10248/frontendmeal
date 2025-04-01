@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function FoodMemoryGame() {
   const [cards, setCards] = useState([]);
@@ -27,10 +27,39 @@ export default function FoodMemoryGame() {
     hard: { pairs: 12, time: 80, gridCols: 4 }
   };
   
+  // Use useCallback to memoize resetGame
+  const resetGame = useCallback(() => {
+    const config = difficultyConfig[difficulty];
+    
+    // Randomly select food emojis based on difficulty
+    const randomFoodEmojis = [...foodEmojis]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, config.pairs);
+    
+    // Create pairs of cards
+    const cardPairs = [...randomFoodEmojis, ...randomFoodEmojis]
+      .sort(() => Math.random() - 0.5)
+      .map((emoji, index) => ({
+        id: index,
+        content: emoji,
+        flipped: false,
+        solved: false
+      }));
+      
+    setCards(cardPairs);
+    setFlipped([]);
+    setSolved([]);
+    setMoves(0);
+    setTimer(config.time);
+    setGameOver(false);
+    setIsActive(false);
+    setScore(0);
+  }, [difficulty, difficultyConfig, foodEmojis]); // Add all dependencies
+  
   // Initialize game
   useEffect(() => {
     resetGame();
-  }, [difficulty]);
+  }, [difficulty, resetGame]); // Added resetGame to the dependency array
   
   // Timer
   useEffect(() => {
@@ -67,34 +96,6 @@ export default function FoodMemoryGame() {
       setScore(calculatedScore);
     }
   }, [solved, cards, timer, moves, difficulty]);
-  
-  const resetGame = () => {
-    const config = difficultyConfig[difficulty];
-    
-    // Randomly select food emojis based on difficulty
-    const randomFoodEmojis = [...foodEmojis]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, config.pairs);
-    
-    // Create pairs of cards
-    const cardPairs = [...randomFoodEmojis, ...randomFoodEmojis]
-      .sort(() => Math.random() - 0.5)
-      .map((emoji, index) => ({
-        id: index,
-        content: emoji,
-        flipped: false,
-        solved: false
-      }));
-      
-    setCards(cardPairs);
-    setFlipped([]);
-    setSolved([]);
-    setMoves(0);
-    setTimer(config.time);
-    setGameOver(false);
-    setIsActive(false);
-    setScore(0);
-  };
   
   const handleCardClick = (id) => {
     // Start timer on first card click
@@ -137,6 +138,12 @@ export default function FoodMemoryGame() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' + secs : secs}`;
+  };
+  
+  const changeDifficulty = (level) => {
+    if (level !== difficulty) {
+      setDifficulty(level);
+    }
   };
   
   return (
@@ -198,7 +205,7 @@ export default function FoodMemoryGame() {
             </div>
           ) : (
             <div>
-              <h2 className="lose-message">⏰ Time's up! ⏰</h2>
+              <h2 className="lose-message">⏰ Time&apos;s up! ⏰</h2>
               <p className="result-details">You found {solved.length} out of {cards.length / 2} pairs.</p>
             </div>
           )}
@@ -480,10 +487,4 @@ export default function FoodMemoryGame() {
       `}</style>
     </div>
   );
-  
-  function changeDifficulty(level) {
-    if (level !== difficulty) {
-      setDifficulty(level);
-    }
-  }
 }
