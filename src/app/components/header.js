@@ -46,7 +46,10 @@ export default function Header() {
     { name: 'Home', href: '/', icon: Home },
     { name: 'Calories', href: '/calorie', icon: Utensils },
     { name: 'Admin', href: 'https://meal-admin-5bcf.vercel.app/', icon: User, external: true },
-    { name: 'Developer', href: 'https://devashish.top', icon: Terminal, external: true }
+    { name: 'Developer', href: 'https://devashish.top', icon: Terminal, external: true },
+    {name: 'MemoryGame', href:'/foodgame', icon: Terminal, external: true},
+    {name: 'PixelGame', href:'/kindgame', icon: Terminal, external: true},
+
   ]
   
   const NavItems = ({ mobile = false }) => (
