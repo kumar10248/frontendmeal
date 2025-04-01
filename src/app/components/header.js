@@ -55,7 +55,7 @@ export default function Header() {
       name: 'More',
       icon: Menu,
       dropdownItems: [
-        { name: 'Admin', href: 'https://meal-admin-5bcf.vercel.app/', icon: User, external: true },
+        { name: 'Admin', href: 'https://cuisineadmin.devashish.top', icon: User, external: true },
         { name: 'Developer', href: 'https://devashish.top', icon: Terminal, external: true }
       ]
     }
