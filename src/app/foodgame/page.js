@@ -77,7 +77,7 @@ export default function FoodMemoryGame() {
   }, []);
   
   // Play sound effect with error handling
-  const playSound = (soundRef) => {
+  const playSound = useCallback((soundRef) => {
     if (soundEnabled && soundRef.current) {
       try {
         soundRef.current.currentTime = 0;
@@ -92,9 +92,9 @@ export default function FoodMemoryGame() {
         console.error("Error playing sound:", error);
       }
     }
-  };
+  }, [soundEnabled]);
   
-  // Use useCallback to memoize resetGame
+  // Use useCallback to memoize resetGame with all dependencies
   const resetGame = useCallback(() => {
     const config = difficultyConfig[difficulty];
     
@@ -128,7 +128,7 @@ export default function FoodMemoryGame() {
     setGameStarted(false);
     setComboCounter(0);
     setComboMultiplier(1);
-  }, [difficulty, theme]); 
+  }, [difficulty, theme, difficultyConfig, themeEmojis]); 
   
   // Initialize game and load high scores - Fixed for SSR
   useEffect(() => {
@@ -160,7 +160,7 @@ export default function FoodMemoryGame() {
       playSound(timeoutSoundRef);
     }
     return () => clearInterval(interval);
-  }, [isActive, timer, isPaused]);
+  }, [isActive, timer, isPaused, playSound]);
   
   // Check if game is over and handle high scores
   useEffect(() => {
@@ -200,7 +200,7 @@ export default function FoodMemoryGame() {
         }
       }
     }
-  }, [solved, cards, timer, moves, difficulty, highScores, comboCounter]);
+  }, [solved, cards, timer, moves, difficulty, highScores, comboCounter, playSound]);
   
   const handleCardClick = (id) => {
     // Start game on first card click
@@ -501,7 +501,7 @@ export default function FoodMemoryGame() {
       <div className="game-instructions">
         <h3>How to Play</h3>
         <p>Find all matching pairs before time runs out! Get combos by finding matches consecutively.</p>
-        <p><strong>Tip:</strong> Use hints when you're stuck, but they will cost you points!</p>
+        <p><strong>Tip:</strong> Use hints when you&apos;re stuck, but they will cost you points!</p>
       </div>
       
       <style jsx>{`
@@ -831,7 +831,7 @@ export default function FoodMemoryGame() {
           border-radius: 10px;
           display: flex;
           justify-content: center;
-        align-items: center;
+          align-items: center;
           font-size: 2rem;
         }
         
@@ -897,6 +897,9 @@ export default function FoodMemoryGame() {
         }
       `}</style>
       
+      <footer className="game-footer">
+        <p>Memory Game © 2025 | Made with 💖 and React</p>
+      </footer>
     </div>
   );
 }
