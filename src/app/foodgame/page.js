@@ -971,10 +971,7 @@ export default function FoodMemoryGame() {
           }
         }
       `}</style>
-      
-      <footer className="game-footer">
-        <p>Memory Game © 2025 | Made with 💖 and React</p>
-      </footer>
+    
     </div>
   );
 }
