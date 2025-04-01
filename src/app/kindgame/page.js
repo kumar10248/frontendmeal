@@ -1,836 +1,1314 @@
 // pages/index.js
 "use client"
-// pages/index.js
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 
-export default function Home() {
-  const [gameStarted, setGameStarted] = useState(false);
-  const [username, setUsername] = useState('');
-  const [currentTool, setCurrentTool] = useState('grass');
-  const [worldSize, setWorldSize] = useState({ width: 20, height: 15 });
-  const [world, setWorld] = useState([]);
-  const [hoveredCell, setHoveredCell] = useState(null);
-  const [gameMode, setGameMode] = useState('create'); // 'create' or 'challenge'
-  const [challenge, setChallenge] = useState(null);
-  const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(60);
-  const [savedWorlds, setSavedWorlds] = useState([]);
-  const [cameraOffset, setCameraOffset] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const worldRef = useRef(null);
+export default function EnhancedSnakeGame() {
+  // Game constants
+  const GRID_SIZE = 20;
+  const CELL_SIZE = 24;
+  const INITIAL_SPEED = 130;
   
-  // Element types with their properties
-  const elementTypes = {
-    empty: { name: 'Empty', color: '#87CEEB', emoji: '⬜', category: 'basic' },
-    grass: { name: 'Grass', color: '#7CFC00', emoji: '🌱', category: 'nature' },
-    water: { name: 'Water', color: '#1E90FF', emoji: '💧', category: 'nature' },
-    mountain: { name: 'Mountain', color: '#A52A2A', emoji: '⛰️', category: 'nature' },
-    tree: { name: 'Tree', color: '#228B22', emoji: '🌳', category: 'nature' },
-    house: { name: 'House', color: '#CD853F', emoji: '🏠', category: 'building' },
-    farm: { name: 'Farm', color: '#DAA520', emoji: '🌾', category: 'building' },
-    mine: { name: 'Mine', color: '#708090', emoji: '⛏️', category: 'building' },
-    castle: { name: 'Castle', color: '#808080', emoji: '🏰', category: 'building' },
-    bridge: { name: 'Bridge', color: '#D2691E', emoji: '🌉', category: 'building' },
-    road: { name: 'Road', color: '#696969', emoji: '🛣️', category: 'infrastructure' },
-    fire: { name: 'Fire', color: '#FF4500', emoji: '🔥', category: 'special' },
-    dragon: { name: 'Dragon', color: '#B22222', emoji: '🐉', category: 'creature' },
-    unicorn: { name: 'Unicorn', color: '#DA70D6', emoji: '🦄', category: 'creature' },
-    wizard: { name: 'Wizard', color: '#9370DB', emoji: '🧙', category: 'creature' },
-    treasure: { name: 'Treasure', color: '#FFD700', emoji: '💰', category: 'special' },
-    portal: { name: 'Portal', color: '#9932CC', emoji: '🌀', category: 'special' },
-    crystal: { name: 'Crystal', color: '#E6E6FA', emoji: '💎', category: 'special' },
+  // Game state
+  const [snake, setSnake] = useState([{ x: 8, y: 8 }]);
+  const [direction, setDirection] = useState('RIGHT');
+  const [nextDirection, setNextDirection] = useState('RIGHT');
+  const [food, setFood] = useState({ x: 5, y: 5, type: 'regular' });
+  const [obstacles, setObstacles] = useState([]);
+  const [portals, setPortals] = useState([]);
+  const [gameOver, setGameOver] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [lives, setLives] = useState(3);
+  const [speed, setSpeed] = useState(INITIAL_SPEED);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [theme, setTheme] = useState('cyber');
+  const [effects, setEffects] = useState([]);
+  const [powerUps, setPowerUps] = useState([]);
+  const [activePowerUps, setActivePowerUps] = useState([]);
+  const [showGrid, setShowGrid] = useState(true);
+  const [gameMode, setGameMode] = useState('classic');
+  const [countdown, setCountdown] = useState(3);
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  const [tutorial, setTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  
+  // Refs for game loop
+  const directionRef = useRef(direction);
+  const nextDirectionRef = useRef(nextDirection);
+  const gameLoopRef = useRef(null);
+  const effectsTimerRef = useRef(null);
+  const powerUpTimerRef = useRef(null);
+  const activePowerUpsRef = useRef(activePowerUps);
+  const obstaclesRef = useRef(obstacles);
+  const portalsRef = useRef(portals);
+  
+  // Update refs when state changes
+  useEffect(() => {
+    directionRef.current = direction;
+    nextDirectionRef.current = nextDirection;
+    activePowerUpsRef.current = activePowerUps;
+    obstaclesRef.current = obstacles;
+    portalsRef.current = portals;
+  }, [direction, nextDirection, activePowerUps, obstacles, portals]);
+  
+  // Themes definition
+  const themes = {
+    cyber: {
+      background: 'bg-gradient-to-br from-gray-900 to-blue-900',
+      gridBg: 'bg-gray-800',
+      gridLines: 'border-blue-900',
+      snake: {
+        head: 'bg-cyan-300',
+        body: 'bg-cyan-500',
+        tail: 'bg-cyan-600'
+      },
+      food: {
+        regular: 'bg-pink-500',
+        special: 'bg-purple-400',
+        extraLife: 'bg-red-500'
+      },
+      obstacle: 'bg-gray-700',
+      portal: 'bg-indigo-600',
+      text: 'text-cyan-300',
+      buttonPrimary: 'bg-cyan-600 hover:bg-cyan-700',
+      buttonSecondary: 'bg-pink-600 hover:bg-pink-700',
+      scoreBoard: 'bg-gray-800 bg-opacity-70 text-cyan-300',
+      effectNeon: 'cyan'
+    },
+    retrowave: {
+      background: 'bg-gradient-to-br from-purple-900 to-pink-800',
+      gridBg: 'bg-black',
+      gridLines: 'border-purple-800',
+      snake: {
+        head: 'bg-yellow-300',
+        body: 'bg-yellow-400',
+        tail: 'bg-yellow-500'
+      },
+      food: {
+        regular: 'bg-pink-500',
+        special: 'bg-purple-500',
+        extraLife: 'bg-red-500'
+      },
+      obstacle: 'bg-gray-800',
+      portal: 'bg-blue-600',
+      text: 'text-pink-400',
+      buttonPrimary: 'bg-pink-600 hover:bg-pink-700',
+      buttonSecondary: 'bg-purple-600 hover:bg-purple-700',
+      scoreBoard: 'bg-black bg-opacity-70 text-pink-400',
+      effectNeon: 'pink'
+    },
+    jungle: {
+      background: 'bg-gradient-to-br from-green-900 to-yellow-800',
+      gridBg: 'bg-green-900',
+      gridLines: 'border-green-800',
+      snake: {
+        head: 'bg-green-300',
+        body: 'bg-green-500',
+        tail: 'bg-green-700'
+      },
+      food: {
+        regular: 'bg-red-500',
+        special: 'bg-yellow-400',
+        extraLife: 'bg-pink-500'
+      },
+      obstacle: 'bg-green-800',
+      portal: 'bg-blue-500',
+      text: 'text-green-300',
+      buttonPrimary: 'bg-green-600 hover:bg-green-700',
+      buttonSecondary: 'bg-yellow-600 hover:bg-yellow-700',
+      scoreBoard: 'bg-green-900 bg-opacity-70 text-green-300',
+      effectNeon: 'green'
+    }
   };
   
-  // Challenge templates
-  const challengeTemplates = [
+  const currentTheme = themes[theme];
+  
+  // Tutorial steps
+  const tutorialSteps = [
     {
-      name: 'Fantasy Kingdom',
-      description: 'Create a kingdom with at least 1 castle, 3 houses, and 2 farms surrounded by nature.',
-      requirements: {
-        castle: 1,
-        house: 3,
-        farm: 2,
-        tree: 5,
-        water: 8
-      },
-      timeLimit: 60
+      title: "Welcome to Snake Bytes!",
+      text: "This advanced version of the classic Snake game features multiple game modes, power-ups and special obstacles.",
+      image: "snake"
     },
     {
-      name: 'Dragon\'s Lair',
-      description: 'Build a mountain lair for a dragon with treasure and surrounded by fire.',
-      requirements: {
-        mountain: 10,
-        dragon: 1,
-        fire: 5,
-        treasure: 3
-      },
-      timeLimit: 45
+      title: "Controls",
+      text: "Use arrow keys to control the snake. Press Space to pause the game. Press Esc to return to the menu.",
+      image: "controls"
     },
     {
-      name: 'Magical Forest',
-      description: 'Create an enchanted forest with unicorns, wizards, and magical crystals.',
-      requirements: {
-        tree: 15,
-        unicorn: 2,
-        wizard: 1,
-        crystal: 4,
-        portal: 1
-      },
-      timeLimit: 50
+      title: "Food Types",
+      text: "Regular food gives you points. Special food grants power-ups or extra points. Red hearts give you an extra life!",
+      image: "food"
+    },
+    {
+      title: "Power-ups",
+      text: "Speed boost, invincibility, score multiplier and more! Watch for their timers at the bottom of the screen.",
+      image: "powerups"
+    },
+    {
+      title: "Obstacles & Portals",
+      text: "Avoid obstacles, they'll cost you a life! Portals teleport you to another location on the grid.",
+      image: "obstacles"
     }
   ];
   
-  // Initialize world grid
-  useEffect(() => {
-    if (gameStarted) {
-      initializeWorld();
-    }
-  }, [gameStarted, worldSize]);
-  
-  // Timer for challenge mode
-  useEffect(() => {
-    let interval;
+  // Generate random position that doesn't overlap with snake, obstacles, or portals
+  const getRandomPosition = () => {
+    let newPos;
+    let valid = false;
     
-    if (gameStarted && gameMode === 'challenge' && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            checkChallengeCompletion(true);
-            return 0;
-          }
-          return prev - 1;
+    while (!valid) {
+      newPos = {
+        x: Math.floor(Math.random() * GRID_SIZE),
+        y: Math.floor(Math.random() * GRID_SIZE)
+      };
+      
+      // Check if position overlaps with snake
+      const snakeOverlap = snake.some(segment => 
+        segment.x === newPos.x && segment.y === newPos.y
+      );
+      
+      // Check if position overlaps with obstacles
+      const obstacleOverlap = obstacles.some(obstacle => 
+        obstacle.x === newPos.x && obstacle.y === newPos.y
+      );
+      
+      // Check if position overlaps with portals
+      const portalOverlap = portals.some(portal => 
+        portal.x === newPos.x && portal.y === newPos.y
+      );
+      
+      // Check if position overlaps with food
+      const foodOverlap = food && food.x === newPos.x && food.y === newPos.y;
+      
+      // Check if position overlaps with power-ups
+      const powerUpOverlap = powerUps.some(powerUp => 
+        powerUp.x === newPos.x && powerUp.y === newPos.y
+      );
+      
+      valid = !snakeOverlap && !obstacleOverlap && !portalOverlap && !foodOverlap && !powerUpOverlap;
+    }
+    
+    return newPos;
+  };
+
+  // Generate food
+  const generateFood = () => {
+    const position = getRandomPosition();
+    const foodTypes = ['regular', 'regular', 'regular', 'special', 'extraLife'];
+    const randomType = foodTypes[Math.floor(Math.random() * foodTypes.length)]; 
+    
+    // Extra life is rare
+    const type = randomType === 'extraLife' && Math.random() > 0.2 ? 'regular' : randomType;
+    
+    setFood({ ...position, type });
+  };
+  
+  // Generate obstacles based on level and game mode
+  const generateObstacles = () => {
+    if (gameMode === 'classic') return [];
+    
+    const obstacles = [];
+    const obstacleCount = Math.min(5, Math.floor(level / 2) + 1);
+    
+    for (let i = 0; i < obstacleCount; i++) {
+      const position = getRandomPosition();
+      obstacles.push(position);
+    }
+    
+    return obstacles;
+  };
+  
+  // Generate portals
+  const generatePortals = () => {
+    if (gameMode === 'classic') return [];
+    if (Math.random() > 0.4) return []; // Don't always generate portals
+    
+    const portal1 = getRandomPosition();
+    let portal2;
+    
+    do {
+      portal2 = getRandomPosition();
+    } while (portal2.x === portal1.x && portal2.y === portal1.y);
+    
+    return [
+      { ...portal1, id: 1 },
+      { ...portal2, id: 1 }
+    ];
+  };
+  
+  // Generate power-up on the grid
+  const generatePowerUp = () => {
+    if (Math.random() > 0.3) return; // 30% chance to generate a power-up
+  
+    const types = ['speedBoost', 'invincibility', 'scoreMultiplier', 'ghostMode', 'shrink'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const position = getRandomPosition();
+    
+    setPowerUps(prev => [...prev, { ...position, type }]);
+  };
+  
+  // Apply power-up effect
+  const applyPowerUp = (type) => {
+    const now = Date.now();
+    
+    switch(type) {
+      case 'speedBoost':
+        setSpeed(prev => Math.max(prev - 40, 50));
+        setActivePowerUps(prev => [...prev, { type, expires: now + 8000 }]);
+        setTimeout(() => {
+          setSpeed(INITIAL_SPEED - (level - 1) * 10);
+        }, 8000);
+        break;
+      case 'invincibility':
+        setActivePowerUps(prev => [...prev, { type, expires: now + 10000 }]);
+        break;
+      case 'scoreMultiplier':
+        setActivePowerUps(prev => [...prev, { type, expires: now + 12000 }]);
+        break;
+      case 'ghostMode':
+        setActivePowerUps(prev => [...prev, { type, expires: now + 7000 }]);
+        break;
+      case 'shrink':
+        setSnake(prev => {
+          if (prev.length <= 3) return prev;
+          return prev.slice(0, Math.max(3, Math.floor(prev.length / 2)));
         });
-      }, 1000);
-    }
-    
-    return () => clearInterval(interval);
-  }, [gameStarted, gameMode, timeLeft]);
-  
-  // Initialize empty world
-  const initializeWorld = () => {
-    const newWorld = [];
-    for (let y = 0; y < worldSize.height; y++) {
-      const row = [];
-      for (let x = 0; x < worldSize.width; x++) {
-        row.push('empty');
-      }
-      newWorld.push(row);
-    }
-    setWorld(newWorld);
-  };
-  
-  // Start game
-  const startGame = () => {
-    if (!username) return;
-    setGameStarted(true);
-  };
-  
-  // Handle cell click to place elements
-  const handleCellClick = (x, y) => {
-    const newWorld = [...world];
-    newWorld[y][x] = currentTool;
-    setWorld(newWorld);
-    
-    // Auto-check challenge completion when placing elements
-    if (gameMode === 'challenge') {
-      checkChallengeCompletion();
+        break;
+      default:
+        break;
     }
   };
-  
-  // Start a challenge
-  const startChallenge = (challengeTemplate) => {
-    setChallenge(challengeTemplate);
-    setGameMode('challenge');
-    setTimeLeft(challengeTemplate.timeLimit);
-    setScore(0);
-    initializeWorld(); // Reset world for new challenge
-  };
-  
-  // Check if challenge is completed
-  const checkChallengeCompletion = (isTimeUp = false) => {
-    if (!challenge) return;
+
+  // Initialize or restart the game
+  const initGame = (mode = 'classic') => {
+    // Clear any existing game loops
+    if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+    if (effectsTimerRef.current) clearInterval(effectsTimerRef.current);
+    if (powerUpTimerRef.current) clearInterval(powerUpTimerRef.current);
     
-    // Count all placed elements
-    const elementCounts = {};
-    for (const type in elementTypes) {
-      elementCounts[type] = 0;
-    }
+    setGameMode(mode);
+    setCountdown(3);
+    setIsCountingDown(true);
     
-    world.forEach(row => {
-      row.forEach(cell => {
-        elementCounts[cell]++;
+    // Begin countdown
+    const countdownTimer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownTimer);
+          setIsCountingDown(false);
+          startGame(mode);
+          return 0;
+        }
+        return prev - 1;
       });
-    });
+    }, 1000);
+  };
+  
+  // Actually start the game after countdown
+  const startGame = (mode) => {
+    setSnake([{ x: 8, y: 8 }]);
+    setDirection('RIGHT');
+    setNextDirection('RIGHT');
+    directionRef.current = 'RIGHT';
+    nextDirectionRef.current = 'RIGHT';
+    setGameOver(false);
+    setScore(0);
+    setLevel(1);
+    setSpeed(INITIAL_SPEED);
+    setLives(mode === 'hardcore' ? 1 : 3);
+    setEffects([]);
+    setPowerUps([]);
+    setActivePowerUps([]);
     
-    // Check if all requirements are met
-    let allRequirementsMet = true;
-    let totalScore = 0;
+    // Generate initial food
+    generateFood();
     
-    for (const [element, requiredCount] of Object.entries(challenge.requirements)) {
-      const actualCount = elementCounts[element];
-      const requirementMet = actualCount >= requiredCount;
-      
-      if (!requirementMet) {
-        allRequirementsMet = false;
+    // Generate obstacles and portals based on game mode
+    const newObstacles = mode === 'adventure' ? generateObstacles() : [];
+    setObstacles(newObstacles);
+    
+    const newPortals = mode === 'adventure' ? generatePortals() : [];
+    setPortals(newPortals);
+    
+    setGameStarted(true);
+    setIsPaused(false);
+    
+    // Start effects timer
+    effectsTimerRef.current = setInterval(() => {
+      // Update and remove expired effects
+      setEffects(prev => prev.filter(effect => effect.life > 0).map(effect => ({
+        ...effect,
+        life: effect.life - 1
+      })));
+    }, 100);
+    
+    // Power-up timer for cleaning up expired power-ups
+    powerUpTimerRef.current = setInterval(() => {
+      const now = Date.now();
+      setActivePowerUps(prev => prev.filter(powerUp => powerUp.expires > now));
+    }, 1000);
+  };
+  
+  // Create visual effect at position
+  const createEffect = (x, y, type) => {
+    setEffects(prev => [...prev, {
+      id: Math.random().toString(36).substr(2, 9),
+      x,
+      y,
+      type,
+      life: 10
+    }]);
+  };
+  
+  // Handle direction change on key press
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (tutorial) {
+        if (e.key === 'Escape' || e.key === 'Enter') {
+          setTutorial(false);
+        } else if (e.key === 'ArrowRight' || e.key === ' ') {
+          setTutorialStep(prev => Math.min(prev + 1, tutorialSteps.length - 1));
+        } else if (e.key === 'ArrowLeft') {
+          setTutorialStep(prev => Math.max(prev - 1, 0));
+        }
+        return;
       }
       
-      // Calculate partial score based on percentage of requirements met
-      const percentage = Math.min(actualCount / requiredCount, 1);
-      totalScore += Math.round(percentage * 100 / Object.keys(challenge.requirements).length);
-    }
-    
-    // Update score
-    setScore(totalScore);
-    
-    // If all requirements are met or time is up, show results
-    if (allRequirementsMet || isTimeUp) {
-      alert(`Challenge ${allRequirementsMet ? 'completed' : 'time up'}! Your score: ${totalScore}%`);
-      if (allRequirementsMet) {
-        // Give bonus for completing before time is up
-        const timeBonus = Math.round((timeLeft / challenge.timeLimit) * 20);
-        setScore(totalScore + timeBonus);
-        alert(`Time bonus: +${timeBonus} points! Total score: ${totalScore + timeBonus}%`);
+      if (isCountingDown) return;
+      
+      if (!gameStarted) {
+        if (e.key === 'Enter') initGame('classic');
+        return;
       }
+      
+      if (e.key === ' ') {
+        setIsPaused(prev => !prev);
+        return;
+      }
+      
+      if (e.key === 'Escape') {
+        setGameStarted(false);
+        setGameOver(false);
+        if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+        if (effectsTimerRef.current) clearInterval(effectsTimerRef.current);
+        if (powerUpTimerRef.current) clearInterval(powerUpTimerRef.current);
+        return;
+      }
+      
+      if (isPaused || gameOver) return;
+      
+      const current = directionRef.current;
+      
+      switch (e.key) {
+        case 'ArrowUp':
+          if (current !== 'DOWN') {
+            setNextDirection('UP');
+            nextDirectionRef.current = 'UP';
+          }
+          break;
+        case 'ArrowDown':
+          if (current !== 'UP') {
+            setNextDirection('DOWN');
+            nextDirectionRef.current = 'DOWN';
+          }
+          break;
+        case 'ArrowLeft':
+          if (current !== 'RIGHT') {
+            setNextDirection('LEFT');
+            nextDirectionRef.current = 'LEFT';
+          }
+          break;
+        case 'ArrowRight':
+          if (current !== 'LEFT') {
+            setNextDirection('RIGHT');
+            nextDirectionRef.current = 'RIGHT';
+          }
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [gameStarted, isPaused, gameOver, isCountingDown, tutorial]);
+  
+  // Handle mobile touch controls
+  const handleTouchStart = (direction) => {
+    if (isPaused || gameOver || !gameStarted) return;
+    
+    const current = directionRef.current;
+    
+    switch (direction) {
+      case 'UP':
+        if (current !== 'DOWN') {
+          setNextDirection('UP');
+          nextDirectionRef.current = 'UP';
+        }
+        break;
+      case 'DOWN':
+        if (current !== 'UP') {
+          setNextDirection('DOWN');
+          nextDirectionRef.current = 'DOWN';
+        }
+        break;
+      case 'LEFT':
+        if (current !== 'RIGHT') {
+          setNextDirection('LEFT');
+          nextDirectionRef.current = 'LEFT';
+        }
+        break;
+      case 'RIGHT':
+        if (current !== 'LEFT') {
+          setNextDirection('RIGHT');
+          nextDirectionRef.current = 'RIGHT';
+        }
+        break;
+      default:
+        break;
     }
   };
   
-  // Save current world
-  const saveWorld = () => {
-    const worldName = prompt('Name your world:');
-    if (!worldName) return;
+  // Game loop
+  useEffect(() => {
+    if (gameOver || !gameStarted || isPaused || isCountingDown) return;
     
-    const newSavedWorld = {
-      name: worldName,
-      creator: username,
-      date: new Date().toLocaleDateString(),
-      data: [...world],
-      size: {...worldSize}
+    const moveSnake = () => {
+      setSnake(prevSnake => {
+        const newSnake = [...prevSnake];
+        const head = { ...newSnake[0] };
+        
+        // Update direction from nextDirection
+        if (nextDirectionRef.current !== directionRef.current) {
+          directionRef.current = nextDirectionRef.current;
+          setDirection(nextDirectionRef.current);
+        }
+        
+        // Move head based on direction
+        switch (directionRef.current) {
+          case 'UP':
+            head.y -= 1;
+            break;
+          case 'DOWN':
+            head.y += 1;
+            break;
+          case 'LEFT':
+            head.x -= 1;
+            break;
+          case 'RIGHT':
+            head.x += 1;
+            break;
+          default:
+            break;
+        }
+        
+        // Check for ghost mode (passing through walls)
+        const hasGhostMode = activePowerUpsRef.current.some(p => p.type === 'ghostMode');
+        
+        // Check if snake hit the wall
+        if (!hasGhostMode && (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE)) {
+          handleCollision();
+          return prevSnake;
+        } else if (hasGhostMode) {
+          // Wrap around for ghost mode
+          if (head.x < 0) head.x = GRID_SIZE - 1;
+          if (head.x >= GRID_SIZE) head.x = 0;
+          if (head.y < 0) head.y = GRID_SIZE - 1;
+          if (head.y >= GRID_SIZE) head.y = 0;
+        }
+        
+        // Check if snake hit an obstacle
+        const hitObstacle = obstaclesRef.current.some(
+          obstacle => obstacle.x === head.x && obstacle.y === head.y
+        );
+        
+        if (hitObstacle) {
+          const hasInvincibility = activePowerUpsRef.current.some(p => p.type === 'invincibility');
+          if (!hasInvincibility) {
+            handleCollision();
+            return prevSnake;
+          }
+          // If invincible, destroy the obstacle
+          setObstacles(prev => prev.filter(
+            obstacle => !(obstacle.x === head.x && obstacle.y === head.y)
+          ));
+          createEffect(head.x, head.y, 'explosion');
+        }
+        
+        // Check if snake hit a portal
+        const hitPortal = portalsRef.current.find(
+          portal => portal.x === head.x && portal.y === head.y
+        );
+        
+        if (hitPortal) {
+          // Find the other portal
+          const exitPortal = portalsRef.current.find(
+            portal => portal.id === hitPortal.id && (portal.x !== hitPortal.x || portal.y !== hitPortal.y)
+          );
+          
+          if (exitPortal) {
+            head.x = exitPortal.x;
+            head.y = exitPortal.y;
+            createEffect(exitPortal.x, exitPortal.y, 'teleport');
+          }
+        }
+        
+        // Check if snake hit itself
+        const hasInvincibility = activePowerUpsRef.current.some(p => p.type === 'invincibility');
+        if (!hasInvincibility && newSnake.some((segment, index) => 
+          index !== 0 && segment.x === head.x && segment.y === head.y
+        )) {
+          handleCollision();
+          return prevSnake;
+        }
+        
+        // Check if snake ate a power-up
+        const eatenPowerUp = powerUps.find(pu => pu.x === head.x && pu.y === head.y);
+        if (eatenPowerUp) {
+          setPowerUps(prev => prev.filter(pu => !(pu.x === head.x && pu.y === head.y)));
+          applyPowerUp(eatenPowerUp.type);
+          createEffect(head.x, head.y, 'powerup');
+        }
+        
+        // Check if snake ate the food
+        if (food && food.x === head.x && food.y === head.y) {
+          // Add to score based on food type
+          let pointsToAdd = 10;
+          
+          if (food.type === 'special') {
+            pointsToAdd = 25;
+          }
+          
+          // Apply score multiplier if active
+          const hasMultiplier = activePowerUpsRef.current.some(p => p.type === 'scoreMultiplier');
+          if (hasMultiplier) {
+            pointsToAdd *= 2;
+          }
+          
+          setScore(prevScore => {
+            const newScore = prevScore + pointsToAdd;
+            // Update high score if needed
+            if (newScore > highScore) {
+              setHighScore(newScore);
+            }
+            
+            // Level up logic - every 100 points
+            const newLevel = Math.floor(newScore / 100) + 1;
+            if (newLevel > level) {
+              setLevel(newLevel);
+              setSpeed(prev => Math.max(prev - 10, 60)); // Speed up
+              
+              // Generate new obstacles on level up for adventure mode
+              if (gameMode === 'adventure') {
+                setObstacles(generateObstacles());
+                setPortals(generatePortals());
+              }
+            }
+            
+            return newScore;
+          });
+          
+          // Handle extra life
+          if (food.type === 'extraLife') {
+            setLives(prev => prev + 1);
+            createEffect(head.x, head.y, 'extraLife');
+          } else {
+            createEffect(head.x, head.y, 'eat');
+          }
+          
+          // Don't remove the tail to make snake grow
+          newSnake.unshift(head);
+          
+          // Generate new food
+          generateFood();
+          
+          // Maybe generate a power-up
+          if (Math.random() < 0.2) {
+            generatePowerUp();
+          }
+          
+          return newSnake;
+        }
+        
+        // Regular move - add new head, remove tail
+        newSnake.unshift(head);
+        newSnake.pop();
+        return newSnake;
+      });
     };
     
-    setSavedWorlds([...savedWorlds, newSavedWorld]);
-    alert(`World "${worldName}" saved!`);
-  };
+    gameLoopRef.current = setInterval(moveSnake, speed);
+    
+    return () => {
+      if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+    };
+  }, [gameOver, gameStarted, isPaused, isCountingDown, food, speed, level, highScore, gameMode, powerUps]);
   
-  // Load a saved world
-  const loadWorld = (savedWorld) => {
-    setWorld(savedWorld.data);
-    setWorldSize(savedWorld.size);
-    alert(`World "${savedWorld.name}" loaded!`);
-  };
-  
-  // Handle camera movement
-  const moveCamera = (dx, dy) => {
-    setCameraOffset({
-      x: cameraOffset.x + dx,
-      y: cameraOffset.y + dy
+  // Handle collision with obstacle or self
+  const handleCollision = () => {
+    createEffect(snake[0].x, snake[0].y, 'collision');
+    
+    setLives(prev => {
+      const newLives = prev - 1;
+      if (newLives <= 0) {
+        setGameOver(true);
+        // Update high score if needed
+        if (score > highScore) {
+          setHighScore(score);
+        }
+      }
+      return newLives;
     });
   };
   
-  // Handle zoom
-  const handleZoom = (factor) => {
-    setZoom(prev => {
-      const newZoom = prev * factor;
-      return Math.min(Math.max(newZoom, 0.5), 2); // Limit zoom between 0.5x and 2x
-    });
-  };
-  
-  // Group elements by category for toolbar
-  const elementsByCategory = Object.entries(elementTypes).reduce((acc, [id, element]) => {
-    if (!acc[element.category]) {
-      acc[element.category] = [];
+  // Determine snake segment appearance
+  const getSnakeSegmentClass = (index, total) => {
+    if (index === 0) {
+      return currentTheme.snake.head;
+    } else if (index === total - 1) {
+      return currentTheme.snake.tail;
+    } else {
+      return currentTheme.snake.body;
     }
-    acc[element.category].push({ id, ...element });
-    return acc;
-  }, {});
+  };
   
-  return (
-    <div className="container">
-      <Head>
-        <title>Pixel World Builder</title>
-        <meta name="description" content="Build your own pixel world" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main>
-        {!gameStarted ? (
-          <div className="start-screen">
-            <h1 className="title">Pixel World Builder</h1>
-            <p className="description">Create your own worlds, pixel by pixel!</p>
-            
-            <div className="input-container">
-              <input
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="username-input"
-              />
-              
-              <div className="world-size-controls">
-                <label>World Size:</label>
-                <div className="size-inputs">
-                  <input
-                    type="number"
-                    min="5"
-                    max="50"
-                    value={worldSize.width}
-                    onChange={(e) => setWorldSize({...worldSize, width: parseInt(e.target.value) || 5})}
-                  /> x 
-                  <input
-                    type="number"
-                    min="5"
-                    max="30"
-                    value={worldSize.height}
-                    onChange={(e) => setWorldSize({...worldSize, height: parseInt(e.target.value) || 5})}
-                  />
+  // Get food class based on type
+  const getFoodClass = (type) => {
+    switch(type) {
+      case 'regular': return currentTheme.food.regular;
+      case 'special': return currentTheme.food.special;
+      case 'extraLife': return currentTheme.food.extraLife;
+      default: return currentTheme.food.regular;
+    }
+  };
+  
+  // Get power-up class
+  const getPowerUpClass = (type) => {
+    switch(type) {
+      case 'speedBoost': return 'bg-yellow-400';
+      case 'invincibility': return 'bg-blue-400';
+      case 'scoreMultiplier': return 'bg-green-400';
+      case 'ghostMode': return 'bg-indigo-400';
+      case 'shrink': return 'bg-orange-400';
+      default: return 'bg-purple-400';
+    }
+  };
+  
+  // Power-up icon
+  const getPowerUpIcon = (type) => {
+    switch(type) {
+      case 'speedBoost': return '⚡';
+      case 'invincibility': return '🛡️';
+      case 'scoreMultiplier': return '×2';
+      case 'ghostMode': return '👻';
+      case 'shrink': return '↓';
+      default: return '?';
+    }
+  };
+  
+  // Format time remaining for power-ups
+  const formatTimeRemaining = (expires) => {
+    const now = Date.now();
+    const remaining = Math.max(0, Math.ceil((expires - now) / 1000));
+    return `${remaining}s`;
+  };
+  
+  // Render game
+  const renderGrid = () => {
+    const grid = [];
+    
+    // Render grid cells
+    for (let y = 0; y < GRID_SIZE; y++) {
+      for (let x = 0; x < GRID_SIZE; x++) {
+        grid.push(
+          <div
+            key={`cell-${x}-${y}`}
+            className={`absolute border ${showGrid ? currentTheme.gridLines : 'border-transparent'}`}
+            style={{
+              width: CELL_SIZE,
+              height: CELL_SIZE,
+              left: x * CELL_SIZE,
+              top: y * CELL_SIZE
+            }}
+          ></div>
+        );
+      }
+    }
+    
+    // Render obstacles
+    obstacles.forEach((obstacle, index) => {
+      grid.push(
+        <div
+          key={`obstacle-${index}`}
+          className={`absolute ${currentTheme.obstacle} rounded`}
+          style={{
+            width: CELL_SIZE,
+            height: CELL_SIZE,
+            left: obstacle.x * CELL_SIZE,
+            top: obstacle.y * CELL_SIZE
+          }}
+        ></div>
+      );
+    });
+    
+    // Render portals
+    portals.forEach((portal, index) => {
+      grid.push(
+        <div
+          key={`portal-${index}`}
+          className={`absolute ${currentTheme.portal} rounded-full animate-pulse`}
+          style={{
+            width: CELL_SIZE,
+            height: CELL_SIZE,
+            left: portal.x * CELL_SIZE,
+            top: portal.y * CELL_SIZE
+          }}
+        ></div>
+      );
+    });
+    
+    // Render power-ups
+    powerUps.forEach((powerUp, index) => {
+      grid.push(
+        <div
+          key={`powerup-${index}`}
+          className={`absolute ${getPowerUpClass(powerUp.type)} rounded-md flex items-center justify-center animate-pulse`}
+          style={{
+            width: CELL_SIZE,
+            height: CELL_SIZE,
+            left: powerUp.x * CELL_SIZE,
+            top: powerUp.y * CELL_SIZE,
+            fontSize: `${CELL_SIZE * 0.6}px`
+          }}
+        >
+          {getPowerUpIcon(powerUp.type)}
+        </div>
+      );
+    });
+    
+    // Render food
+    if (food) {
+      let foodElement;
+      
+      if (food.type === 'extraLife') {
+        foodElement = (
+          <div
+            key="food"
+            className={`absolute ${getFoodClass(food.type)} flex items-center justify-center rounded-full animate-pulse`}
+            style={{
+              width: CELL_SIZE,
+              height: CELL_SIZE,
+              left: food.x * CELL_SIZE,
+              top: food.y * CELL_SIZE,
+              fontSize: `${CELL_SIZE * 0.7}px`
+            }}
+          >
+            ❤️
+          </div>
+        );
+      } else {
+        foodElement = (
+          <div
+            key="food"
+            className={`absolute ${getFoodClass(food.type)} rounded-full ${food.type === 'special' ? 'animate-pulse' : ''}`}
+            style={{
+              width: CELL_SIZE * 0.8,
+              height: CELL_SIZE * 0.8,
+              left: food.x * CELL_SIZE + CELL_SIZE * 0.1,
+              top: food.y * CELL_SIZE + CELL_SIZE * 0.1
+            }}
+          ></div>
+        );
+      }
+      
+      grid.push(foodElement);
+    }
+    
+    // Render snake
+    snake.forEach((segment, index) => {
+        grid.push(
+            <div
+              key={`snake-${index}`}
+              className={`absolute ${getSnakeSegmentClass(index, snake.length)} rounded-sm`}
+              style={{
+                width: index === 0 ? CELL_SIZE : CELL_SIZE * 0.9,
+                height: index === 0 ? CELL_SIZE : CELL_SIZE * 0.9,
+                left: segment.x * CELL_SIZE + (index === 0 ? 0 : CELL_SIZE * 0.05),
+                top: segment.y * CELL_SIZE + (index === 0 ? 0 : CELL_SIZE * 0.05),
+                zIndex: 10
+              }}
+            ></div>
+          );
+        });
+        
+        // Render effects
+        effects.forEach((effect) => {
+          let effectElement;
+          
+          switch(effect.type) {
+            case 'eat':
+              effectElement = (
+                <div
+                  key={`effect-${effect.id}`}
+                  className={`absolute text-${currentTheme.effectNeon}-400 text-opacity-${effect.life * 10}`}
+                  style={{
+                    width: CELL_SIZE,
+                    height: CELL_SIZE,
+                    left: effect.x * CELL_SIZE,
+                    top: effect.y * CELL_SIZE,
+                    fontSize: `${CELL_SIZE * 0.7}px`,
+                    transform: `scale(${1 + (10 - effect.life) / 5})`,
+                    zIndex: 20
+                  }}
+                >
+                  +{food && food.type === 'special' ? '25' : '10'}
                 </div>
+              );
+              break;
+            case 'collision':
+              effectElement = (
+                <div
+                  key={`effect-${effect.id}`}
+                  className="absolute"
+                  style={{
+                    width: CELL_SIZE * 2,
+                    height: CELL_SIZE * 2,
+                    left: effect.x * CELL_SIZE - CELL_SIZE / 2,
+                    top: effect.y * CELL_SIZE - CELL_SIZE / 2,
+                    zIndex: 20
+                  }}
+                >
+                  <div className={`w-full h-full rounded-full bg-red-500 bg-opacity-${effect.life * 8} animate-ping`}></div>
+                </div>
+              );
+              break;
+            case 'explosion':
+              effectElement = (
+                <div
+                  key={`effect-${effect.id}`}
+                  className="absolute"
+                  style={{
+                    width: CELL_SIZE * 3,
+                    height: CELL_SIZE * 3,
+                    left: effect.x * CELL_SIZE - CELL_SIZE,
+                    top: effect.y * CELL_SIZE - CELL_SIZE,
+                    zIndex: 20
+                  }}
+                >
+                  <div className={`w-full h-full rounded-full bg-yellow-500 bg-opacity-${effect.life * 5} animate-ping`}></div>
+                </div>
+              );
+              break;
+            case 'teleport':
+              effectElement = (
+                <div
+                  key={`effect-${effect.id}`}
+                  className="absolute"
+                  style={{
+                    width: CELL_SIZE * 2,
+                    height: CELL_SIZE * 2,
+                    left: effect.x * CELL_SIZE - CELL_SIZE / 2,
+                    top: effect.y * CELL_SIZE - CELL_SIZE / 2,
+                    zIndex: 20
+                  }}
+                >
+                  <div className={`w-full h-full rounded-full bg-indigo-500 bg-opacity-${effect.life * 8} animate-ping`}></div>
+                </div>
+              );
+              break;
+            case 'powerup':
+              effectElement = (
+                <div
+                  key={`effect-${effect.id}`}
+                  className="absolute"
+                  style={{
+                    width: CELL_SIZE * 2,
+                    height: CELL_SIZE * 2,
+                    left: effect.x * CELL_SIZE - CELL_SIZE / 2,
+                    top: effect.y * CELL_SIZE - CELL_SIZE / 2,
+                    zIndex: 20
+                  }}
+                >
+                  <div className={`w-full h-full rounded-full bg-purple-500 bg-opacity-${effect.life * 8} animate-ping`}></div>
+                </div>
+              );
+              break;
+            case 'extraLife':
+              effectElement = (
+                <div
+                  key={`effect-${effect.id}`}
+                  className={`absolute text-red-500 text-opacity-${effect.life * 10} font-bold`}
+                  style={{
+                    width: CELL_SIZE,
+                    height: CELL_SIZE,
+                    left: effect.x * CELL_SIZE,
+                    top: effect.y * CELL_SIZE - (10 - effect.life) * 3,
+                    fontSize: `${CELL_SIZE * 0.7}px`,
+                    zIndex: 20
+                  }}
+                >
+                  +1 ❤️
+                </div>
+              );
+              break;
+            default:
+              effectElement = null;
+          }
+          
+          if (effectElement) grid.push(effectElement);
+        });
+        
+        return grid;
+      };
+      
+      // Render tutorial
+      const renderTutorial = () => {
+        const currentStep = tutorialSteps[tutorialStep];
+        
+        return (
+          <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-6 max-w-md">
+              <h2 className={`text-2xl font-bold mb-4 ${currentTheme.text}`}>{currentStep.title}</h2>
+              
+              <div className="mb-6 h-32 flex items-center justify-center">
+                {currentStep.image === 'snake' && (
+                  <div className="flex space-x-1">
+                    <div className={`w-6 h-6 ${currentTheme.snake.head} rounded-sm`}></div>
+                    <div className={`w-6 h-6 ${currentTheme.snake.body} rounded-sm`}></div>
+                    <div className={`w-6 h-6 ${currentTheme.snake.body} rounded-sm`}></div>
+                    <div className={`w-6 h-6 ${currentTheme.snake.tail} rounded-sm`}></div>
+                  </div>
+                )}
+                {currentStep.image === 'controls' && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <div></div>
+                    <div className={`w-10 h-10 border ${currentTheme.text} border-opacity-50 flex items-center justify-center rounded`}>↑</div>
+                    <div></div>
+                    <div className={`w-10 h-10 border ${currentTheme.text} border-opacity-50 flex items-center justify-center rounded`}>←</div>
+                    <div className={`w-10 h-10 border ${currentTheme.text} border-opacity-50 flex items-center justify-center rounded`}>↓</div>
+                    <div className={`w-10 h-10 border ${currentTheme.text} border-opacity-50 flex items-center justify-center rounded`}>→</div>
+                  </div>
+                )}
+                {currentStep.image === 'food' && (
+                  <div className="flex space-x-4">
+                    <div className={`w-6 h-6 ${currentTheme.food.regular} rounded-full`}></div>
+                    <div className={`w-6 h-6 ${currentTheme.food.special} rounded-full animate-pulse`}></div>
+                    <div className={`w-6 h-6 ${currentTheme.food.extraLife} rounded-full flex items-center justify-center text-xs`}>❤️</div>
+                  </div>
+                )}
+                {currentStep.image === 'powerups' && (
+                  <div className="flex space-x-4">
+                    <div className="w-8 h-8 bg-yellow-400 rounded-md flex items-center justify-center">⚡</div>
+                    <div className="w-8 h-8 bg-blue-400 rounded-md flex items-center justify-center">🛡️</div>
+                    <div className="w-8 h-8 bg-green-400 rounded-md flex items-center justify-center">×2</div>
+                    <div className="w-8 h-8 bg-indigo-400 rounded-md flex items-center justify-center">👻</div>
+                  </div>
+                )}
+                {currentStep.image === 'obstacles' && (
+                  <div className="flex space-x-4">
+                    <div className={`w-8 h-8 ${currentTheme.obstacle} rounded`}></div>
+                    <div className={`w-8 h-8 ${currentTheme.portal} rounded-full animate-pulse`}></div>
+                  </div>
+                )}
               </div>
               
-              <button onClick={startGame} className="start-button">Start Building</button>
+              <p className="text-gray-300 mb-6">{currentStep.text}</p>
+              
+              <div className="flex justify-between text-sm">
+                <button 
+                  className={`${currentTheme.buttonSecondary} px-3 py-1 rounded ${tutorialStep > 0 ? '' : 'opacity-50 cursor-not-allowed'}`}
+                  onClick={() => setTutorialStep(prev => Math.max(prev - 1, 0))}
+                  disabled={tutorialStep === 0}
+                >
+                  Previous
+                </button>
+                
+                <span className="text-gray-400">
+                  {tutorialStep + 1} / {tutorialSteps.length}
+                </span>
+                
+                <button 
+                  className={`${currentTheme.buttonPrimary} px-3 py-1 rounded`}
+                  onClick={() => {
+                    if (tutorialStep < tutorialSteps.length - 1) {
+                      setTutorialStep(prev => prev + 1);
+                    } else {
+                      setTutorial(false);
+                    }
+                  }}
+                >
+                  {tutorialStep < tutorialSteps.length - 1 ? 'Next' : 'Start Game'}
+                </button>
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="game-container">
-            <div className="header">
-              <h1>Pixel World Builder</h1>
-              <div className="user-info">
-                <span>Builder: {username}</span>
-                {gameMode === 'challenge' && (
-                  <>
-                    <span>Challenge: {challenge.name}</span>
-                    <span>Time: {timeLeft}s</span>
-                    <span>Score: {score}%</span>
-                  </>
-                )}
+        );
+      };
+      
+      // Start screen
+      const renderStartScreen = () => (
+        <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center z-30">
+          <h1 className={`text-4xl md:text-6xl font-bold mb-8 ${currentTheme.text}`}>
+            Snake Bytes
+          </h1>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <button 
+              className={`${currentTheme.buttonPrimary} py-3 px-6 rounded-lg font-bold text-white`}
+              onClick={() => initGame('classic')}
+            >
+              Classic Mode
+            </button>
+            <button 
+              className={`${currentTheme.buttonPrimary} py-3 px-6 rounded-lg font-bold text-white`}
+              onClick={() => initGame('adventure')}
+            >
+              Adventure Mode
+            </button>
+            <button 
+              className={`${currentTheme.buttonPrimary} py-3 px-6 rounded-lg font-bold text-white`}
+              onClick={() => initGame('hardcore')}
+            >
+              Hardcore Mode
+            </button>
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-4 mb-8">
+            <button 
+              className={`${currentTheme.buttonSecondary} py-2 px-4 rounded-lg text-white`}
+              onClick={() => setTutorial(true)}
+            >
+              How to Play
+            </button>
+            <button 
+              className={`${currentTheme.buttonSecondary} py-2 px-4 rounded-lg text-white`}
+              onClick={() => setTheme(prevTheme => {
+                const themes = ['cyber', 'retrowave', 'jungle'];
+                const currentIndex = themes.indexOf(prevTheme);
+                return themes[(currentIndex + 1) % themes.length];
+              })}
+            >
+              Change Theme
+            </button>
+            <button 
+              className={`${currentTheme.buttonSecondary} py-2 px-4 rounded-lg text-white`}
+              onClick={() => setShowGrid(prev => !prev)}
+            >
+              {showGrid ? 'Hide Grid' : 'Show Grid'}
+            </button>
+          </div>
+          
+          <div className="text-gray-400 text-center max-w-md px-4">
+            <p className="mb-2">Use arrow keys or touch controls to navigate the snake.</p>
+            <p>Press SPACE to pause. ESC to return to menu.</p>
+          </div>
+        </div>
+      );
+      
+      // Game over screen
+      const renderGameOverScreen = () => (
+        <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center z-30">
+          <h2 className={`text-4xl md:text-5xl font-bold mb-4 ${currentTheme.text}`}>
+            Game Over
+          </h2>
+          
+          <div className="text-xl text-white mb-8">
+            <p>Final Score: <span className="font-bold">{score}</span></p>
+            <p>High Score: <span className="font-bold">{highScore}</span></p>
+          </div>
+          
+          <div className="flex space-x-4">
+            <button 
+              className={`${currentTheme.buttonPrimary} py-2 px-6 rounded-lg font-bold text-white`}
+              onClick={() => initGame(gameMode)}
+            >
+              Try Again
+            </button>
+            <button 
+              className={`${currentTheme.buttonSecondary} py-2 px-6 rounded-lg text-white`}
+              onClick={() => {
+                setGameStarted(false);
+                setGameOver(false);
+              }}
+            >
+              Main Menu
+            </button>
+          </div>
+        </div>
+      );
+      
+      // Countdown screen
+      const renderCountdown = () => (
+        <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-30">
+          <div className={`${currentTheme.text} text-6xl md:text-8xl font-bold animate-pulse`}>
+            {countdown}
+          </div>
+        </div>
+      );
+      
+      // Mobile controls
+      const renderMobileControls = () => (
+        <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center z-20 md:hidden">
+          <button 
+            className="w-12 h-12 bg-gray-800 bg-opacity-70 rounded-lg mb-2 flex items-center justify-center text-white"
+            onClick={() => handleTouchStart('UP')}
+          >
+            ↑
+          </button>
+          <div className="flex space-x-4">
+            <button 
+              className="w-12 h-12 bg-gray-800 bg-opacity-70 rounded-lg flex items-center justify-center text-white"
+              onClick={() => handleTouchStart('LEFT')}
+            >
+              ←
+            </button>
+            <button 
+              className="w-12 h-12 bg-gray-800 bg-opacity-70 rounded-lg flex items-center justify-center text-white"
+              onClick={() => handleTouchStart('DOWN')}
+            >
+              ↓
+            </button>
+            <button 
+              className="w-12 h-12 bg-gray-800 bg-opacity-70 rounded-lg flex items-center justify-center text-white"
+              onClick={() => handleTouchStart('RIGHT')}
+            >
+              →
+            </button>
+          </div>
+        </div>
+      );
+    
+      return (
+        <div className={`min-h-screen ${currentTheme.background} flex flex-col items-center justify-center p-4`}>
+          <Head>
+            <title>Snake Bytes | Advanced Snake Game</title>
+            <meta name="description" content="An enhanced version of the classic Snake game with multiple modes, power-ups and special features" />
+            <link rel="icon" href="/favicon.ico" />
+          </Head>
+          
+          <main className="flex flex-col items-center">
+            {/* Game title and score */}
+            <div className={`${currentTheme.scoreBoard} mb-2 p-4 rounded-lg w-full max-w-md flex justify-between items-center`}>
+              <div>
+                <h1 className="text-xl font-bold">Snake Bytes</h1>
+                <p className="text-sm opacity-75">{gameMode === 'classic' ? 'Classic Mode' : gameMode === 'adventure' ? 'Adventure Mode' : 'Hardcore Mode'}</p>
+              </div>
+              <div className="text-right">
+                <p>Score: <span className="font-bold">{score}</span></p>
+                <p>High: <span className="font-bold">{highScore}</span></p>
               </div>
             </div>
             
-            <div className="game-content">
-              <div className="toolbar">
-                <div className="tool-categories">
-                  {Object.entries(elementsByCategory).map(([category, elements]) => (
-                    <div key={category} className="tool-category">
-                      <h3>{category.charAt(0).toUpperCase() + category.slice(1)}</h3>
-                      <div className="tool-options">
-                        {elements.map(element => (
-                          <div
-                            key={element.id}
-                            className={`tool ${currentTool === element.id ? 'selected' : ''}`}
-                            onClick={() => setCurrentTool(element.id)}
-                            title={element.name}
-                          >
-                            <span>{element.emoji}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="action-buttons">
-                  <button onClick={saveWorld}>Save World</button>
-                  <button onClick={() => setGameMode('create')}>Free Build</button>
-                  <button onClick={() => {
-                    const randomChallenge = challengeTemplates[Math.floor(Math.random() * challengeTemplates.length)];
-                    startChallenge(randomChallenge);
-                  }}>Random Challenge</button>
-                </div>
-              </div>
+            {/* Game board */}
+            <div 
+              className={`relative ${currentTheme.gridBg} rounded-lg overflow-hidden`}
+              style={{ 
+                width: GRID_SIZE * CELL_SIZE, 
+                height: GRID_SIZE * CELL_SIZE 
+              }}
+            >
+              {renderGrid()}
               
-              <div className="world-viewport">
-                <div className="camera-controls">
-                  <button onClick={() => moveCamera(0, -1)}>↑</button>
-                  <button onClick={() => moveCamera(-1, 0)}>←</button>
-                  <button onClick={() => moveCamera(1, 0)}>→</button>
-                  <button onClick={() => moveCamera(0, 1)}>↓</button>
-                  <button onClick={() => handleZoom(1.2)}>+</button>
-                  <button onClick={() => handleZoom(1/1.2)}>-</button>
+              {!gameStarted && renderStartScreen()}
+              {gameOver && renderGameOverScreen()}
+              {isCountingDown && renderCountdown()}
+              {tutorial && renderTutorial()}
+              
+              {gameStarted && !gameOver && renderMobileControls()}
+              
+              {/* Pause button (mobile) */}
+              {gameStarted && !gameOver && !isCountingDown && (
+                <button 
+                  className="absolute top-2 right-2 w-10 h-10 rounded-full bg-gray-800 bg-opacity-70 flex items-center justify-center z-20 md:hidden"
+                  onClick={() => setIsPaused(prev => !prev)}
+                >
+                  {isPaused ? '▶️' : '⏸️'}
+                </button>
+              )}
+              
+              {/* Menu button (mobile) */}
+              {gameStarted && !gameOver && !isCountingDown && (
+                <button 
+                  className="absolute top-2 left-2 w-10 h-10 rounded-full bg-gray-800 bg-opacity-70 flex items-center justify-center text-white z-20 md:hidden"
+                  onClick={() => {
+                    setGameStarted(false);
+                    if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+                    if (effectsTimerRef.current) clearInterval(effectsTimerRef.current);
+                    if (powerUpTimerRef.current) clearInterval(powerUpTimerRef.current);
+                  }}
+                >
+                  ⇦
+                </button>
+              )}
+              
+              {/* Pause screen */}
+              {isPaused && (
+                <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-30">
+                  <h2 className={`text-4xl font-bold mb-8 ${currentTheme.text}`}>Paused</h2>
+                  <div className="flex space-x-4">
+                    <button 
+                      className={`${currentTheme.buttonPrimary} py-2 px-6 rounded-lg font-bold text-white`}
+                      onClick={() => setIsPaused(false)}
+                    >
+                      Resume
+                    </button>
+                    <button 
+                      className={`${currentTheme.buttonSecondary} py-2 px-6 rounded-lg text-white`}
+                      onClick={() => {
+                        setGameStarted(false);
+                        setIsPaused(false);
+                        if (gameLoopRef.current) clearInterval(gameLoopRef.current);
+                        if (effectsTimerRef.current) clearInterval(effectsTimerRef.current);
+                        if (powerUpTimerRef.current) clearInterval(powerUpTimerRef.current);
+                      }}
+                    >
+                      Main Menu
+                    </button>
+                  </div>
                 </div>
-                
-                <div className="world-container" ref={worldRef}>
-                  <div
-                    className="world-grid"
-                    style={{
-                      transform: `translate(${cameraOffset.x * 30}px, ${cameraOffset.y * 30}px) scale(${zoom})`,
-                      width: `${worldSize.width * 30}px`,
-                      height: `${worldSize.height * 30}px`
-                    }}
+              )}
+            </div>
+            
+            {/* Game info bar */}
+            <div className={`${currentTheme.scoreBoard} mt-2 p-2 rounded-lg w-full max-w-md flex justify-between items-center`}>
+              <div className="flex items-center">
+                <span className="mr-2">Level: {level}</span>
+                <span>Lives: {[...Array(Math.max(0, lives))].map((_, i) => <span key={i}>❤️</span>)}</span>
+              </div>
+              <div>
+                {gameStarted && !gameOver && 
+                  <button 
+                    className={`${currentTheme.buttonSecondary} py-1 px-3 text-sm rounded text-white`}
+                    onClick={() => setIsPaused(prev => !prev)}
                   >
-                    {world.map((row, y) => (
-                      <div key={y} className="world-row">
-                        {row.map((cell, x) => (
-                          <div
-                            key={`${x}-${y}`}
-                            className="world-cell"
-                            style={{ 
-                              backgroundColor: elementTypes[cell].color,
-                              border: hoveredCell?.x === x && hoveredCell?.y === y ? '2px solid white' : '1px solid rgba(0,0,0,0.1)'
-                            }}
-                            onClick={() => handleCellClick(x, y)}
-                            onMouseEnter={() => setHoveredCell({ x, y })}
-                            onMouseLeave={() => setHoveredCell(null)}
-                          >
-                            <span>{elementTypes[cell].emoji}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {gameMode === 'challenge' && (
-                  <div className="challenge-info">
-                    <h3>{challenge.name}</h3>
-                    <p>{challenge.description}</p>
-                    <div className="requirements">
-                      <h4>Requirements:</h4>
-                      <ul>
-                        {Object.entries(challenge.requirements).map(([element, count]) => (
-                          <li key={element}>
-                            {elementTypes[element].emoji} {elementTypes[element].name}: {count}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
+                    {isPaused ? 'Resume' : 'Pause'}
+                  </button>
+                }
               </div>
             </div>
             
-            {savedWorlds.length > 0 && (
-              <div className="saved-worlds">
-                <h3>Saved Worlds</h3>
-                <div className="worlds-list">
-                  {savedWorlds.map((savedWorld, index) => (
-                    <div key={index} className="saved-world-item">
-                      <div>
-                        <strong>{savedWorld.name}</strong>
-                        <span>by {savedWorld.creator} on {savedWorld.date}</span>
-                      </div>
-                      <button onClick={() => loadWorld(savedWorld)}>Load</button>
-                    </div>
-                  ))}
-                </div>
+            {/* Active power-ups display */}
+            {activePowerUps.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2 justify-center w-full max-w-md">
+                {activePowerUps.map((powerUp, index) => (
+                  <div 
+                    key={`active-${index}`} 
+                    className={`${getPowerUpClass(powerUp.type)} px-2 py-1 rounded flex items-center text-xs`}
+                  >
+                    <span className="mr-1">{getPowerUpIcon(powerUp.type)}</span>
+                    <span>{formatTimeRemaining(powerUp.expires)}</span>
+                  </div>
+                ))}
               </div>
             )}
-          </div>
-        )}
-      </main>
-
-      <style jsx>{`
-        .container {
-          min-height: 100vh;
-          padding: 0 0.5rem;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          background-color: #121212;
-          color: #eaeaea;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-            Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-        }
-
-        main {
-          padding: 2rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-          width: 100%;
-        }
-
-        .title {
-          margin: 0;
-          line-height: 1.15;
-          font-size: 3rem;
-          background: linear-gradient(45deg, #ff5f6d, #ffc371);
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          text-align: center;
-        }
-
-        .description {
-          text-align: center;
-          line-height: 1.5;
-          font-size: 1.5rem;
-          color: #bbbbbb;
-        }
-
-        .start-screen {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin-top: 2rem;
-          width: 100%;
-          max-width: 500px;
-          background-color: #1e1e1e;
-          padding: 2rem;
-          border-radius: 12px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .input-container {
-          margin-top: 2rem;
-          display: flex;
-          flex-direction: column;
-          width: 100%;
-        }
-
-        .username-input {
-          padding: 0.8rem;
-          font-size: 1rem;
-          background-color: #2a2a2a;
-          color: #eaeaea;
-          border: 2px solid #444;
-          border-radius: 8px;
-          margin-bottom: 1rem;
-        }
-
-        .world-size-controls {
-          display: flex;
-          flex-direction: column;
-          margin-bottom: 1rem;
-        }
-
-        .size-inputs {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin-top: 0.5rem;
-        }
-
-        .size-inputs input {
-          width: 60px;
-          padding: 0.5rem;
-          background-color: #2a2a2a;
-          color: #eaeaea;
-          border: 2px solid #444;
-          border-radius: 4px;
-        }
-
-        .start-button {
-          padding: 0.8rem 1.5rem;
-          font-size: 1rem;
-          background: linear-gradient(45deg, #ff5f6d, #ffc371);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: transform 0.2s;
-        }
-
-        .start-button:hover {
-          transform: translateY(-2px);
-        }
-
-        .game-container {
-          width: 100%;
-          max-width: 1200px;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem;
-          background-color: #1e1e1e;
-          border-radius: 8px;
-          margin-bottom: 1rem;
-        }
-
-        .header h1 {
-          font-size: 1.5rem;
-          margin: 0;
-          background: linear-gradient(45deg, #ff5f6d, #ffc371);
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
-        .user-info {
-          display: flex;
-          gap: 1rem;
-        }
-
-        .game-content {
-          display: flex;
-          gap: 1rem;
-          height: 70vh;
-        }
-
-        .toolbar {
-          width: 220px;
-          background-color: #1e1e1e;
-          border-radius: 8px;
-          padding: 1rem;
-          display: flex;
-          flex-direction: column;
-          overflow-y: auto;
-        }
-
-        .tool-categories {
-          flex: 1;
-          overflow-y: auto;
-        }
-
-        .tool-category {
-          margin-bottom: 1rem;
-        }
-
-        .tool-category h3 {
-          margin: 0 0 0.5rem 0;
-          font-size: 1rem;
-          color: #bbbbbb;
-          border-bottom: 1px solid #333;
-          padding-bottom: 0.3rem;
-        }
-
-        .tool-options {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-        }
-
-        .tool {
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background-color: #2a2a2a;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 1.2rem;
-          transition: transform 0.1s;
-        }
-
-        .tool:hover {
-          transform: scale(1.1);
-        }
-
-        .tool.selected {
-          background-color: #3a3a3a;
-          box-shadow: 0 0 0 2px #ff5f6d;
-        }
-
-        .action-buttons {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          margin-top: 1rem;
-        }
-
-        .action-buttons button {
-          padding: 0.5rem;
-          background-color: #2a2a2a;
-          color: #eaeaea;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-
-        .action-buttons button:hover {
-          background-color: #3a3a3a;
-        }
-
-        .world-viewport {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          background-color: #1e1e1e;
-          border-radius: 8px;
-          overflow: hidden;
-          position: relative;
-        }
-
-        .camera-controls {
-          position: absolute;
-          top: 10px;
-          left: 10px;
-          z-index: 10;
-          display: grid;
-          grid-template-columns: repeat(3, 30px);
-          grid-template-rows: repeat(3, 30px);
-          gap: 2px;
-        }
-
-        .camera-controls button {
-          width: 30px;
-          height: 30px;
-          padding: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background-color: rgba(42, 42, 42, 0.7);
-          color: #eaeaea;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .camera-controls button:nth-child(1) {
-          grid-column: 2;
-          grid-row: 1;
-        }
-        .camera-controls button:nth-child(2) {
-          grid-column: 1;
-          grid-row: 2;
-        }
-        .camera-controls button:nth-child(3) {
-          grid-column: 3;
-          grid-row: 2;
-        }
-        .camera-controls button:nth-child(4) {
-          grid-column: 2;
-          grid-row: 3;
-        }
-        .camera-controls button:nth-child(5) {
-          grid-column: 3;
-          grid-row: 1;
-        }
-        .camera-controls button:nth-child(6) {
-          grid-column: 3;
-          grid-row: 3;
-        }
-
-        .world-container {
-          flex: 1;
-          overflow: auto;
-          position: relative;
-          padding: 1rem;
-        }
-
-        .world-grid {
-          position: relative;
-          transition: transform 0.2s;
-          transform-origin: center;
-        }
-
-        .world-row {
-          display: flex;
-        }
-
-        .world-cell {
-          width: 30px;
-          height: 30px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 16px;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-
-        .challenge-info {
-          padding: 1rem;
-          background-color: rgba(42, 42, 42, 0.9);
-          position: absolute;
-          bottom: 10px;
-          right: 10px;
-          width: 250px;
-          border-radius: 8px;
-          max-height: 300px;
-          overflow-y: auto;
-        }
-
-        .challenge-info h3 {
-          margin: 0 0 0.5rem 0;
-          color: #ff5f6d;
-        }
-
-        .challenge-info p {
-          margin: 0 0 0.5rem 0;
-          font-size: 0.9rem;
-        }
-
-        .requirements h4 {
-          margin: 0.5rem 0;
-          font-size: 0.9rem;
-          color: #bbbbbb;
-        }
-
-        .requirements ul {
-          margin: 0;
-          padding-left: 1.5rem;
-          font-size: 0.8rem;
-        }
-
-        .saved-worlds {
-          margin-top: 1rem;
-          width: 100%;
-          background-color: #1e1e1e;
-          border-radius: 8px;
-          padding: 1rem;
-        }
-
-        .saved-worlds h3 {
-          margin: 0 0 1rem 0;
-          color: #bbbbbb;
-        }
-
-        .worlds-list {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 1rem;
-        }
-
-        .saved-world-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0.5rem;
-          background-color: #2a2a2a;
-          border-radius: 4px;
-          width: calc(50% - 0.5rem);
-        }
-
-        .saved-world-item div {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .saved-world-item span {
-          font-size: 0.8rem;
-          color: #bbbbbb;
-        }
-
-        .saved-world-item button {
-          padding: 0.3rem 0.6rem;
-          background-color: #3a3a3a;
-          color: #eaeaea;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        @media (max-width: 768px) {
-          .game-content {
-            flex-direction: column;
-            height: auto;
-          }
-          
-          .toolbar {
-            width: 100%;
-            height: 200px;
-          }
-          
-          .world-viewport {
-            height: 400px;
-          }
-          
-          .saved-world-item {
-            width: 100%;
-          }
-        }
-      `}</style>
-    </div>
-  );
-}
+          </main>
+        </div>
+      );
+    }
