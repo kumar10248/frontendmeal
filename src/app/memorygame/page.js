@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 export default function FoodMemoryGame() {
-  // All the existing state variables remain the same
   const [cards, setCards] = useState([]);
   const [flipped, setFlipped] = useState([]);
   const [solved, setSolved] = useState([]);
@@ -27,15 +26,14 @@ export default function FoodMemoryGame() {
   const [comboMultiplier, setComboMultiplier] = useState(1);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState(0);
   
-  // Sound refs remain the same
+  // Refs for sound effects - keeping these even if files don't exist
   const flipSoundRef = useRef(null);
   const matchSoundRef = useRef(null);
   const victorySoundRef = useRef(null);
   const timeoutSoundRef = useRef(null);
   
-  // Theme emojis and difficulty config remain the same
+  // Theme emojis
   const themeEmojis = {
     food: [
       '🍕', '🍔', '🍟', '🌭', '🍿', '🧀', '🥪', '🌮', 
@@ -58,57 +56,45 @@ export default function FoodMemoryGame() {
     ]
   };
   
-  // Updated difficulty config with mobile grid configurations
   const difficultyConfig = {
-    easy: { 
-      pairs: 6, 
-      time: 120, 
-      gridCols: 3, 
-      mobileGridCols: 3, 
-      hintPenalty: 5, 
-      hintCount: 3 
-    },
-    medium: { 
-      pairs: 8, 
-      time: 100, 
-      gridCols: 4, 
-      mobileGridCols: 4, 
-      hintPenalty: 10, 
-      hintCount: 2 
-    },
-    hard: { 
-      pairs: 12, 
-      time: 80, 
-      gridCols: 4, 
-      mobileGridCols: 4, 
-      hintPenalty: 15, 
-      hintCount: 1 
-    }
+    easy: { pairs: 6, time: 120, gridCols: 3, hintPenalty: 5, hintCount: 3 },
+    medium: { pairs: 8, time: 100, gridCols: 4, hintPenalty: 10, hintCount: 2 },
+    hard: { pairs: 12, time: 80, gridCols: 4, hintPenalty: 15, hintCount: 1 }
   };
   
-  // Sound initialization remains the same
+  // Fix 1: Safely initialize sounds only in browser environment
+  // with better error handling and silent failure
   useEffect(() => {
+    // Only run in browser environment
     if (typeof window === 'undefined') return;
 
+    // Create sounds only if Audio API is available
     if ('Audio' in window) {
       try {
+        // Using try-catch to handle missing audio files
+        // In a real app, these files need to exist in the public directory
         flipSoundRef.current = new Audio('/sounds/flip.mp3');
         matchSoundRef.current = new Audio('/sounds/match.mp3');
         victorySoundRef.current = new Audio('/sounds/victory.mp3');
         timeoutSoundRef.current = new Audio('/sounds/timeout.mp3');
         
+        // Fix: Preload sounds for better performance
         flipSoundRef.current.load();
         matchSoundRef.current.load();
         victorySoundRef.current.load();
         timeoutSoundRef.current.load();
         
-        const handleError = () => {};
+        // Fix: Handle errors silently
+        const handleError = () => {
+          // console.warn("Audio file not found or cannot be played");
+        };
         
         flipSoundRef.current.addEventListener('error', handleError);
         matchSoundRef.current.addEventListener('error', handleError);
         victorySoundRef.current.addEventListener('error', handleError);
         timeoutSoundRef.current.addEventListener('error', handleError);
         
+        // Clean up
         return () => {
           if (flipSoundRef.current) flipSoundRef.current.removeEventListener('error', handleError);
           if (matchSoundRef.current) matchSoundRef.current.removeEventListener('error', handleError);
@@ -121,30 +107,42 @@ export default function FoodMemoryGame() {
     }
   }, []);
   
-  // Sound playback function remains the same
+  // Fix 2: Improved sound playback with better error handling
   const playSound = useCallback((soundRef) => {
     if (!soundEnabled || !soundRef.current) return;
     
     try {
+      // Reset playback position
       soundRef.current.currentTime = 0;
       
+      // Use promise-based play with catch
       const playPromise = soundRef.current.play();
       
+      // Modern browsers return a promise from play()
       if (playPromise !== undefined) {
-        playPromise.catch(error => {});
+        playPromise.catch(error => {
+          // Silence errors like "play() request was interrupted"
+          // which happens when rapidly clicking cards
+          // console.warn("Sound playback error:", error.message);
+        });
       }
-    } catch (error) {}
+    } catch (error) {
+      // Fail silently - sound is not critical for gameplay
+      // console.error("Error playing sound:", error);
+    }
   }, [soundEnabled]);
   
-  // Reset game function remains the same
+  // Fix 3: Reset game function with proper dependencies
   const resetGame = useCallback(() => {
     const config = difficultyConfig[difficulty];
     
+    // Randomly select emojis based on theme and difficulty
     const emojiPool = themeEmojis[theme] || themeEmojis.food;
     const randomEmojis = [...emojiPool]
       .sort(() => Math.random() - 0.5)
       .slice(0, config.pairs);
     
+    // Create pairs of cards
     const cardPairs = [...randomEmojis, ...randomEmojis]
       .sort(() => Math.random() - 0.5)
       .map((emoji, index) => ({
@@ -168,17 +166,19 @@ export default function FoodMemoryGame() {
     setGameStarted(false);
     setComboCounter(0);
     setComboMultiplier(1);
-  }, [difficulty, theme]);
+  }, [difficulty, theme]); 
   
-  // Initialize game function remains the same
+  // Fix 4: Initialize game with better SSR handling 
   useEffect(() => {
     resetGame();
     
+    // Only attempt localStorage in browser environment
     if (typeof window !== 'undefined') {
       try {
         const savedHighScores = localStorage.getItem('memoryGameHighScores');
         if (savedHighScores) {
           const parsedScores = JSON.parse(savedHighScores);
+          // Validate the structure of saved scores before using
           if (parsedScores && typeof parsedScores === 'object' && 
               'easy' in parsedScores && 'medium' in parsedScores && 'hard' in parsedScores) {
             setHighScores(parsedScores);
@@ -186,11 +186,12 @@ export default function FoodMemoryGame() {
         }
       } catch (error) {
         console.error("Error loading high scores:", error);
+        // If there's an error, just use the default scores
       }
     }
-  }, [difficulty, theme, resetGame]);
+  }, [difficulty, theme, resetGame]); 
   
-  // Timer logic remains the same
+  // Fix 5: Improved timer with better cleanup
   useEffect(() => {
     let interval = null;
     
@@ -204,6 +205,7 @@ export default function FoodMemoryGame() {
       playSound(timeoutSoundRef);
     }
     
+    // Proper cleanup to prevent memory leaks
     return () => {
       if (interval !== null) {
         clearInterval(interval);
@@ -211,15 +213,18 @@ export default function FoodMemoryGame() {
     };
   }, [isActive, timer, isPaused, playSound]);
   
-  // Game over handler remains the same
+  // Fix 6: Improved game over handler with better state management
   useEffect(() => {
+    // Only process if there are solved cards and the game has started
     if (!gameStarted || solved.length === 0) return;
     
+    // Check for game completion
     if (solved.length === cards.length && cards.length > 0) {
       setIsActive(false);
       setGameOver(true);
       playSound(victorySoundRef);
       
+      // Calculate score based on moves, time, combos and difficulty
       const timeBonus = timer * 10;
       const movesPenalty = moves * 5;
       const comboBonus = comboCounter * 20;
@@ -234,6 +239,7 @@ export default function FoodMemoryGame() {
       
       setScore(calculatedScore);
       
+      // Update high scores if needed
       if (calculatedScore > highScores[difficulty] && typeof window !== 'undefined') {
         const newHighScores = {
           ...highScores,
@@ -245,85 +251,102 @@ export default function FoodMemoryGame() {
         try {
           localStorage.setItem('memoryGameHighScores', JSON.stringify(newHighScores));
         } catch (error) {
+          // Handle localStorage errors (e.g., in incognito mode)
           console.error("Error saving high scores:", error);
         }
       }
     }
   }, [solved, cards, timer, moves, difficulty, highScores, comboCounter, playSound, gameStarted]);
   
-  // Card click handler remains the same
+  // Fix 7: Improved card click handler with better state management
   const handleCardClick = useCallback((id) => {
+    // Don't process clicks if game is over or paused
     if (gameOver || isPaused) return;
     
+    // Don't allow clicking already flipped or solved cards
     if (flipped.includes(id) || solved.includes(id)) return;
     
+    // Start game on first card click
     if (!gameStarted) {
       setGameStarted(true);
       setIsActive(true);
     }
     
+    // Don't allow more than 2 cards to be flipped at once
     if (flipped.length >= 2) return;
     
+    // Play flip sound
     playSound(flipSoundRef);
     
+    // Flip the card
     setFlipped(prevFlipped => [...prevFlipped, id]);
     
+    // Check for matches when 2 cards are flipped
     if (flipped.length === 1) {
       const firstId = flipped[0];
       const secondId = id;
       
+      // Increment moves counter
       setMoves(prevMoves => prevMoves + 1);
       
+      // Find the corresponding card objects
       const firstCard = cards.find(card => card.id === firstId);
       const secondCard = cards.find(card => card.id === secondId);
       
+      // Check if cards match
       if (firstCard && secondCard && firstCard.content === secondCard.content) {
+        // Cards match, mark as solved
         setSolved(prevSolved => [...prevSolved, firstId, secondId]);
         setFlipped([]);
         playSound(matchSoundRef);
         
+        // Increment combo counter and update multiplier
         const newComboCounter = comboCounter + 1;
         setComboCounter(newComboCounter);
         
+        // Update multiplier every 3 combos
         if (newComboCounter % 3 === 0) {
           setComboMultiplier(prev => Math.min(prev + 0.5, 3));
         }
       } else {
+        // Cards don't match, flip back after a short delay
         const timer = setTimeout(() => {
           setFlipped([]);
+          // Reset combo counter on mismatch
           setComboCounter(0);
           setComboMultiplier(1);
         }, 1000);
         
+        // Clean up timer if component unmounts
         return () => clearTimeout(timer);
       }
     }
   }, [gameOver, isPaused, flipped, solved, gameStarted, cards, comboCounter, playSound]);
   
-  // Format time function remains the same
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' + secs : secs}`;
   };
   
-  // Difficulty change handler remains the same
+  // Fix 8: Improved difficulty change handler 
   const changeDifficulty = useCallback((level) => {
     if (level !== difficulty) {
       setDifficulty(level);
+      // Reset the game when difficulty changes
       setTimeout(resetGame, 0);
     }
   }, [difficulty, resetGame]);
   
-  // Theme change handler remains the same
+  // Fix 9: Improved theme change handler
   const changeTheme = useCallback((newTheme) => {
     if (newTheme !== theme) {
       setTheme(newTheme);
+      // Reset the game when theme changes
       setTimeout(resetGame, 0);
     }
   }, [theme, resetGame]);
   
-  // Other action functions remain the same
   const togglePause = useCallback(() => {
     if (isActive && !gameOver) {
       setIsPaused(prevPaused => !prevPaused);
@@ -335,13 +358,16 @@ export default function FoodMemoryGame() {
       setShowHint(true);
       setHintsRemaining(prevHints => prevHints - 1);
       
+      // Reduce score for hint usage
       const hintPenalty = difficultyConfig[difficulty].hintPenalty;
       setScore(prev => Math.max(0, prev - hintPenalty));
       
+      // Automatically hide hint after 1 second
       const timer = setTimeout(() => {
         setShowHint(false);
       }, 1000);
       
+      // Clean up timer if component unmounts
       return () => clearTimeout(timer);
     }
   }, [hintsRemaining, showHint, gameOver, isActive, difficulty]);
@@ -350,67 +376,24 @@ export default function FoodMemoryGame() {
     setSoundEnabled(prevSound => !prevSound);
   }, []);
   
-  // Improved mobile detection with viewport height tracking
+  // Fix 10: Improved mobile detection with better event handling
   useEffect(() => {
+    // Skip on server side
     if (typeof window === 'undefined') return;
     
-    const checkViewport = () => {
+    const checkIfMobile = () => {
       setIsMobile(window.innerWidth <= 768);
-      setViewportHeight(window.innerHeight);
     };
     
     // Initial check
-    checkViewport();
+    checkIfMobile();
     
-    // Add listener for window resize and orientation change
-    window.addEventListener('resize', checkViewport);
-    window.addEventListener('orientationchange', checkViewport);
+    // Add listener for window resize
+    window.addEventListener('resize', checkIfMobile);
     
-    // Clean up
-    return () => {
-      window.removeEventListener('resize', checkViewport);
-      window.removeEventListener('orientationchange', checkViewport);
-    };
+    // Clean up listener to prevent memory leaks
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
-  
-  // Calculate optimal card size based on available space
-  const calculateCardSize = useCallback(() => {
-    if (typeof window === 'undefined') return {};
-    
-    const config = difficultyConfig[difficulty];
-    const numCols = isMobile ? config.mobileGridCols : config.gridCols;
-    const numRows = Math.ceil((config.pairs * 2) / numCols);
-    
-    // Account for other UI elements (approximated heights)
-    const nonGameBoardHeight = isMobile ? 370 : 300; // Adjust based on your UI
-    
-    // Calculate available height for game board
-    const maxBoardHeight = viewportHeight - nonGameBoardHeight;
-    
-    // Determine card size: account for gaps (10px between cards)
-    const maxPossibleCardSize = Math.floor(maxBoardHeight / numRows) - 10;
-    
-    // Ensure the cards are not too large on desktop
-    const cardSize = isMobile 
-      ? Math.min(maxPossibleCardSize, (window.innerWidth - 40) / numCols - 10) // Subtract padding and gaps
-      : Math.min(100, maxPossibleCardSize); // Maximum size of 100px on desktop
-      
-    return {
-      width: `${cardSize}px`,
-      height: `${cardSize}px`
-    };
-  }, [difficulty, isMobile, viewportHeight]);
-  
-  // Calculate grid styles
-  const getGridStyles = useCallback(() => {
-    const config = difficultyConfig[difficulty];
-    const numCols = isMobile ? config.mobileGridCols : config.gridCols;
-    
-    return {
-      gridTemplateColumns: `repeat(${numCols}, 1fr)`,
-      gap: isMobile ? '5px' : '10px'
-    };
-  }, [difficulty, isMobile]);
   
   return (
     <div className="game-container">
@@ -568,14 +551,15 @@ export default function FoodMemoryGame() {
       
       <div 
         className="game-board"
-        style={getGridStyles()}
+        style={{ 
+          gridTemplateColumns: `repeat(${isMobile && difficulty === 'hard' ? 3 : difficultyConfig[difficulty].gridCols}, 1fr)` 
+        }}
       >
         {cards.map(card => (
           <div 
             key={card.id}
             className={`game-card ${flipped.includes(card.id) ? 'flipped' : ''} ${solved.includes(card.id) ? 'solved' : ''} ${showHint && !solved.includes(card.id) && !flipped.includes(card.id) ? 'hint' : ''}`}
             onClick={() => handleCardClick(card.id)}
-            style={calculateCardSize()}
           >
             <div className="card-inner">
               <div className="card-back">
@@ -600,7 +584,7 @@ export default function FoodMemoryGame() {
           width: 100%;
           max-width: 800px;
           margin: 0 auto;
-          padding: 10px;
+          padding: 15px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
           font-display: swap;
           overflow-x: hidden;
@@ -610,8 +594,8 @@ export default function FoodMemoryGame() {
         .game-title {
           text-align: center;
           color: #e74c3c;
-          font-size: ${isMobile ? '1.3rem' : '2rem'};
-          margin-bottom: ${isMobile ? '10px' : '15px'};
+          font-size: 2rem;
+          margin-bottom: 15px;
         }
         
         .game-dashboard {
@@ -620,8 +604,8 @@ export default function FoodMemoryGame() {
           background-color: #fff;
           border-radius: 10px;
           box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-          margin-bottom: ${isMobile ? '10px' : '15px'};
-          padding: ${isMobile ? '8px' : '12px'};
+          margin-bottom: 15px;
+          padding: 12px;
         }
         
         .dashboard-item {
@@ -630,49 +614,49 @@ export default function FoodMemoryGame() {
         }
         
         .dashboard-label {
-          font-size: ${isMobile ? '0.7rem' : '0.9rem'};
+          font-size: 0.9rem;
           text-transform: uppercase;
           color: #7f8c8d;
-          margin-bottom: 2px;
+          margin-bottom: 3px;
         }
         
         .dashboard-value {
-          font-size: ${isMobile ? '1rem' : '1.3rem'};
+          font-size: 1.3rem;
           font-weight: bold;
           color: #2c3e50;
         }
         
         .multiplier {
-          font-size: ${isMobile ? '0.7rem' : '0.9rem'};
+          font-size: 0.9rem;
           color: #e67e22;
         }
         
         .game-controls {
-          margin-bottom: ${isMobile ? '10px' : '15px'};
+          margin-bottom: 15px;
         }
         
         .control-group {
-          margin-bottom: ${isMobile ? '6px' : '10px'};
+          margin-bottom: 10px;
         }
         
         .control-label {
           display: block;
-          font-size: ${isMobile ? '0.8rem' : '0.9rem'};
+          font-size: 0.9rem;
           color: #7f8c8d;
-          margin-bottom: ${isMobile ? '3px' : '5px'};
+          margin-bottom: 5px;
         }
         
         .button-group {
           display: flex;
-          gap: ${isMobile ? '3px' : '5px'};
+          gap: 5px;
         }
         
         .control-button {
           background-color: #f7f7f7;
           border: 2px solid #ddd;
           border-radius: 6px;
-          padding: ${isMobile ? '4px 6px' : '6px 10px'};
-          font-size: ${isMobile ? '0.75rem' : '0.85rem'};
+          padding: 6px 10px;
+          font-size: 0.85rem;
           flex: 1;
           cursor: pointer;
           transition: all 0.2s;
@@ -687,8 +671,8 @@ export default function FoodMemoryGame() {
         
         .game-action-buttons {
           display: flex;
-          gap: ${isMobile ? '5px' : '8px'};
-          margin-bottom: ${isMobile ? '10px' : '15px'};
+          gap: 8px;
+          margin-bottom: 15px;
           flex-wrap: wrap;
         }
         
@@ -696,8 +680,8 @@ export default function FoodMemoryGame() {
           background-color: #f7f7f7;
           border: 2px solid #ddd;
           border-radius: 6px;
-          padding: ${isMobile ? '6px 8px' : '8px 12px'};
-          font-size: ${isMobile ? '0.8rem' : '0.9rem'};
+          padding: 8px 12px;
+          font-size: 0.9rem;
           flex: 1;
           cursor: pointer;
           transition: all 0.2s;
@@ -749,26 +733,25 @@ export default function FoodMemoryGame() {
         .pause-menu {
           background-color: white;
           border-radius: 10px;
-          padding: ${isMobile ? '15px' : '20px'};
+          padding: 20px;
           text-align: center;
           width: 90%;
           max-width: 400px;
         }
         
         .pause-menu h2 {
-          margin-bottom: ${isMobile ? '15px' : '20px'};
+          margin-bottom: 20px;
           color: #2c3e50;
-          font-size: ${isMobile ? '1.3rem' : '1.5rem'};
         }
         
         .resume-button, .new-game-button {
           display: block;
           width: 100%;
-          padding: ${isMobile ? '8px' : '10px'};
-          margin-bottom: ${isMobile ? '8px' : '10px'};
+          padding: 10px;
+          margin-bottom: 10px;
           border-radius: 6px;
           border: none;
-          font-size: ${isMobile ? '0.9rem' : '1rem'};
+          font-size: 1rem;
           cursor: pointer;
         }
         
@@ -782,307 +765,213 @@ export default function FoodMemoryGame() {
           color: white;
         }
         
-       .game-result {
-  background-color: rgba(255, 255, 255, 0.95);
-  border-radius: 10px;
-  padding: ${isMobile ? '15px' : '20px'};
-  text-align: center;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-}
-
-.win-message {
-  color: #27ae60;
-  font-size: ${isMobile ? '1.2rem' : '1.5rem'};
-  margin-bottom: ${isMobile ? '10px' : '15px'};
-}
-
-.lose-message {
-  color: #e74c3c;
-  font-size: ${isMobile ? '1.2rem' : '1.5rem'};
-  margin-bottom: ${isMobile ? '10px' : '15px'};
-}
-
-.result-details {
-  margin-bottom: ${isMobile ? '10px' : '15px'};
-  font-size: ${isMobile ? '0.85rem' : '1rem'};
-}
-
-.result-details p {
-  margin: ${isMobile ? '5px 0' : '8px 0'};
-}
-
-.score {
-  font-size: ${isMobile ? '1.1rem' : '1.3rem'};
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-.high-score {
-  color: #e74c3c;
-  font-weight: bold;
-  font-size: ${isMobile ? '1rem' : '1.2rem'};
-}
-
-.high-scores {
-  margin: ${isMobile ? '10px 0' : '15px 0'};
-  border-top: 1px solid #eee;
-  padding-top: ${isMobile ? '10px' : '15px'};
-}
-
-.high-scores h3 {
-  margin-bottom: ${isMobile ? '8px' : '10px'};
-  color: #2c3e50;
-  font-size: ${isMobile ? '1rem' : '1.2rem'};
-}
-
-.high-score-list {
-  display: flex;
-  flex-direction: column;
-  gap: ${isMobile ? '5px' : '8px'};
-}
-
-.high-score-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: ${isMobile ? '0.85rem' : '0.95rem'};
-}
-
-.play-again-button {
-  background-color: #27ae60;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: ${isMobile ? '8px 15px' : '10px 20px'};
-  font-size: ${isMobile ? '0.9rem' : '1rem'};
-  cursor: pointer;
-  margin-top: ${isMobile ? '15px' : '20px'};
-}
-
-.game-board {
-  display: grid;
-  margin: 0 auto;
-  margin-bottom: ${isMobile ? '15px' : '20px'};
-  width: 100%;
-  max-width: ${isMobile ? '100%' : '600px'};
-  max-height: ${isMobile ? 'calc(100vh - 380px)' : 'auto'};
-  justify-content: center;
-}
-
-.game-card {
-  perspective: 1000px;
-  cursor: pointer;
-  transform-style: preserve-3d;
-  transition: transform 0.2s ease-in-out;
-  aspect-ratio: 1;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  text-align: center;
-  transition: transform 0.5s;
-  transform-style: preserve-3d;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.game-card.flipped .card-inner {
-  transform: rotateY(180deg);
-}
-
-.card-front, .card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 10px;
-  font-size: ${isMobile ? 'clamp(16px, 8vw, 32px)' : 'clamp(24px, 4vw, 48px)'};
-}
-
-.card-back {
-  background-color: #3498db;
-  color: white;
-}
-
-.card-front {
-  background-color: #fff;
-  transform: rotateY(180deg);
-}
-
-.game-card.solved .card-inner {
-  box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
-  animation: pulse 2s infinite;
-}
-
-.game-card.hint .card-inner {
-  box-shadow: 0 0 15px rgba(241, 196, 15, 0.8);
-  animation: hint-pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
-}
-
-@keyframes hint-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
-}
-
-.game-instructions {
-  background-color: #f8f9fa;
-  border-radius: 10px;
-  padding: ${isMobile ? '10px' : '15px'};
-  margin-top: ${isMobile ? '10px' : '20px'};
-  font-size: ${isMobile ? '0.75rem' : '0.9rem'};
-  color: #7f8c8d;
-}
-
-.game-instructions h3 {
-  font-size: ${isMobile ? '0.9rem' : '1.1rem'};
-  color: #2c3e50;
-  margin-bottom: ${isMobile ? '5px' : '8px'};
-}
-
-.game-instructions p {
-  margin: ${isMobile ? '5px 0' : '8px 0'};
-}
-
-/* Mobile Optimization Enhancements */
-@media (max-width: 768px) {
-  .game-container {
-    padding: 5px;
-  }
-  
-  /* Auto adjust font size based on viewport width for cards */
-  .card-front span, .card-back span {
-    font-size: min(8vw, 28px);
-  }
-  
-  /* Ensure controls are compact but usable */
-  .game-controls, .game-action-buttons {
-    gap: 4px;
-  }
-  
-  .control-button, .action-button {
-    padding: 5px;
-    font-size: 0.7rem;
-  }
-
-  /* Optimize dashboard for smaller screens */
-  .dashboard-item {
-    padding: 3px;
-  }
-  
-  /* Ensure game board fits in viewport without scrolling */
-  .game-board {
-    margin-top: 5px;
-    gap: 4px !important;
-    max-height: min(calc(100vh - 280px), 400px);
-  }
-  
-  /* Make game instructions more compact */
-  .game-instructions {
-    padding: 8px;
-    margin-top: 8px;
-  }
-  
-  /* Reduce overall spacing */
-  .game-title, .game-dashboard, .game-controls, .game-action-buttons {
-    margin-bottom: 8px;
-  }
-  
-  /* Adjust card sizes dynamically based on available space and difficulty */
-  .game-card {
-    min-width: 10px;
-    min-height: 10px;
-  }
-}
-
-/* Portrait-specific adjustments for very small screens */
-@media (max-width: 380px) and (max-height: 700px) {
-  .game-title {
-    font-size: 1.1rem;
-    margin-bottom: 5px;
-  }
-  
-  .dashboard-label {
-    font-size: 0.65rem;
-  }
-  
-  .dashboard-value {
-    font-size: 0.85rem;
-  }
-  
-  .control-button, .action-button {
-    font-size: 0.65rem;
-    padding: 4px;
-  }
-  
-  .game-instructions {
-    font-size: 0.7rem;
-  }
-  
-  .game-instructions h3 {
-    font-size: 0.8rem;
-  }
-  
-  /* Ensure cards are small enough */
-  .game-card {
-    transform: scale(0.95);
-  }
-}
-
-/* Landscape mode optimizations */
-@media (max-width: 850px) and (max-height: 450px) and (orientation: landscape) {
-  .game-container {
-    display: flex;
-    flex-wrap: wrap;
-  }
-  
-  .game-title {
-    width: 100%;
-    font-size: 1rem;
-    margin-bottom: 3px;
-  }
-  
-  .game-dashboard {
-    width: 30%;
-    flex-direction: column;
-    margin-right: 5px;
-  }
-  
-  .game-controls, .game-action-buttons {
-    width: 30%;
-    flex-direction: column;
-  }
-  
-  .game-board {
-    width: 65%;
-    max-height: calc(100vh - 30px);
-    order: 4;
-  }
-  
-  .game-instructions {
-    display: none; /* Hide instructions in landscape to save space */
-  }
-  
-  /* Make cards smaller in landscape */
-  .card-front span, .card-back span {
-    font-size: min(4vw, 24px);
-  }
-}
+        .game-result {
+          background-color: rgba(255, 255, 255, 0.95);
+          border-radius: 10px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+          padding: 25px 15px;
+          text-align: center;
+          width: 90%;
+          max-width: 500px;
+        }
+        
+        .win-message {
+          color: #27ae60;
+          font-size: 1.6rem;
+          margin-bottom: 15px;
+        }
+        
+        .lose-message {
+          color: #e74c3c;
+          font-size: 1.6rem;
+          margin-bottom: 15px;
+        }
+        
+        .result-details {
+          margin-bottom: 15px;
+          font-size: 1rem;
+          color: #2c3e50;
+        }
+        
+        .score {
+          font-size: 1.3rem;
+          font-weight: bold;
+          color: #2c3e50;
+          margin-top: 8px;
+        }
+        
+        .high-score {
+          font-size: 1.3rem;
+          font-weight: bold;
+          color: #f39c12;
+          margin-top: 8px;
+        }
+        
+        .high-scores {
+          background-color: #f7f9fa;
+          border-radius: 8px;
+          padding: 10px;
+          margin: 15px 0;
+        }
+        
+        .high-scores h3 {
+          margin: 0 0 10px 0;
+          color: #2c3e50;
+        }
+        
+        .high-score-list {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+        
+        .high-score-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 5px 0;
+          border-bottom: 1px dashed #ecf0f1;
+        }
+        
+        .high-score-item:last-child {
+          border-bottom: none;
+        }
+        
+        .play-again-button {
+          background-color: #2ecc71;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          padding: 10px 20px;
+          font-size: 1.1rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          -webkit-tap-highlight-color: transparent;
+        }
+        
+        .play-again-button:hover, .play-again-button:active {
+          background-color: #27ae60;
+        }
+        
+        .game-board {
+          display: grid;
+          gap: 10px;
+          margin-bottom: 20px;
+          width: 100%;
+        }
+        
+        .game-card {
+          aspect-ratio: 1;
+          cursor: pointer;
+          perspective: 1000px;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+        }
+        
+        .card-inner {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          transition: transform 0.6s;
+          transform-style: preserve-3d;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-card.flipped .card-inner {
+          transform: rotateY(180deg);
+        }
+        
+        .game-card.solved .card-inner {
+          transform: rotateY(180deg);
+          box-shadow: 0 0 0 3px #2ecc71;
+        }
+        
+        .game-card.hint .card-inner {
+          box-shadow: 0 0 0 3px #f39c12;
+          animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+        
+        .card-front, .card-back {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+          border-radius: 10px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 2rem;
+        }
+        
+        .card-front {
+          background-color: white;
+          transform: rotateY(180deg);
+        }
+        
+        .card-back {
+          background-color: #3498db;
+          color: white;
+        }
+        
+        .game-instructions {
+          background-color: #f7f9fa;
+          border-radius: 10px;
+          padding: 15px;
+          margin-top: 20px;
+        }
+        
+        .game-instructions h3 {
+          margin-top: 0;
+          color: #2c3e50;
+          font-size: 1.1rem;
+        }
+        
+        .game-instructions p {
+          margin: 10px 0 0;
+          font-size: 0.9rem;
+          color: #7f8c8d;
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 768px) {
+          .game-title {
+            font-size: 1.5rem;
+          }
+          
+          .dashboard-label {
+            font-size: 0.75rem;
+          }
+          
+          .dashboard-value {
+            font-size: 1.1rem;
+          }
+          
+          .control-button, .action-button {
+            padding: 8px 5px;
+            font-size: 0.8rem;
+          }
+          
+          .card-front, .card-back {
+            font-size: 1.5rem;
+          }
+          
+          .game-instructions h3 {
+            font-size: 1rem;
+          }
+          
+          .game-instructions p {
+            font-size: 0.8rem;
+          }
+        }
       `}</style>
+    
     </div>
   );
 }
