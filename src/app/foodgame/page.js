@@ -113,7 +113,7 @@ export default function FoodMemoryGame() {
     setGameStarted(false);
     setComboCounter(0);
     setComboMultiplier(1);
-  }, [difficulty, theme]); 
+}, [dependency1, dependency2, difficultyConfig, themeEmojis]);
   
   // Initialize game
   useEffect(() => {
@@ -174,7 +174,7 @@ export default function FoodMemoryGame() {
         localStorage.setItem('memoryGameHighScores', JSON.stringify(newHighScores));
       }
     }
-  }, [solved, cards, timer, moves, difficulty, highScores, comboCounter]);
+}, [existingDependencies, playSound]);
   
   const handleCardClick = (id) => {
     // Start game on first card click
