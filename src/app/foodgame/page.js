@@ -54,12 +54,12 @@ export default function FoodMemoryGame() {
     setGameOver(false);
     setIsActive(false);
     setScore(0);
-  }, [difficulty, difficultyConfig, foodEmojis]); // Add all dependencies
+  }, [difficulty]); // Simplified dependency array
   
   // Initialize game
   useEffect(() => {
     resetGame();
-  }, [difficulty, resetGame]); // Added resetGame to the dependency array
+  }, [difficulty, resetGame]); 
   
   // Timer
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function FoodMemoryGame() {
     if (gameOver || flipped.length >= 2) return;
     
     // Don't allow clicking already flipped or solved cards
-    if (flipped.includes(id) || solved.some(solvedId => solvedId === id)) return;
+    if (flipped.includes(id) || solved.includes(id)) return;
     
     // Flip the card
     const newFlipped = [...flipped, id];
@@ -145,6 +145,24 @@ export default function FoodMemoryGame() {
       setDifficulty(level);
     }
   };
+  
+  // Get device type for responsive layout adjustments
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    // Initial check
+    checkIfMobile();
+    
+    // Add listener for window resize
+    window.addEventListener('resize', checkIfMobile);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
   
   return (
     <div className="game-container">
@@ -188,7 +206,7 @@ export default function FoodMemoryGame() {
         </button>
         
         <button onClick={resetGame} className="reset-button">
-          Reset Game
+          Reset
         </button>
       </div>
       
@@ -196,11 +214,11 @@ export default function FoodMemoryGame() {
         <div className="game-result">
           {solved.length === cards.length / 2 ? (
             <div>
-              <h2 className="win-message">🎉 Congratulations! You won! 🎉</h2>
+              <h2 className="win-message">🎉 Congratulations! 🎉</h2>
               <div className="result-details">
                 <p>Time remaining: {formatTime(timer)}</p>
                 <p>Total moves: {moves}</p>
-                <p className="score">Your score: {score} points</p>
+                <p className="score">Score: {score} points</p>
               </div>
             </div>
           ) : (
@@ -218,7 +236,7 @@ export default function FoodMemoryGame() {
       <div 
         className="game-board"
         style={{ 
-          gridTemplateColumns: `repeat(${difficultyConfig[difficulty].gridCols}, 1fr)` 
+          gridTemplateColumns: `repeat(${isMobile && difficulty === 'hard' ? 3 : difficultyConfig[difficulty].gridCols}, 1fr)` 
         }}
       >
         {cards.map(card => (
@@ -241,22 +259,25 @@ export default function FoodMemoryGame() {
       
       <div className="game-instructions">
         <h3>How to Play</h3>
-        <p>Find all matching pairs of food emojis before the time runs out!</p>
+        <p>Find all matching pairs of food emojis before time runs out!</p>
       </div>
       
       <style jsx>{`
         .game-container {
+          width: 100%;
           max-width: 800px;
           margin: 0 auto;
-          padding: 20px;
+          padding: 15px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+          overflow-x: hidden;
+          touch-action: manipulation;
         }
         
         .game-title {
           text-align: center;
           color: #e74c3c;
-          font-size: 2.5rem;
-          margin-bottom: 20px;
+          font-size: 2rem;
+          margin-bottom: 15px;
         }
         
         .game-dashboard {
@@ -265,8 +286,8 @@ export default function FoodMemoryGame() {
           background-color: #fff;
           border-radius: 10px;
           box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-          margin-bottom: 20px;
-          padding: 15px;
+          margin-bottom: 15px;
+          padding: 12px;
         }
         
         .dashboard-item {
@@ -278,11 +299,11 @@ export default function FoodMemoryGame() {
           font-size: 0.9rem;
           text-transform: uppercase;
           color: #7f8c8d;
-          margin-bottom: 5px;
+          margin-bottom: 3px;
         }
         
         .dashboard-value {
-          font-size: 1.5rem;
+          font-size: 1.3rem;
           font-weight: bold;
           color: #2c3e50;
         }
@@ -290,8 +311,8 @@ export default function FoodMemoryGame() {
         .difficulty-controls {
           display: flex;
           justify-content: center;
-          gap: 10px;
-          margin-bottom: 20px;
+          gap: 8px;
+          margin-bottom: 15px;
           flex-wrap: wrap;
         }
         
@@ -299,10 +320,11 @@ export default function FoodMemoryGame() {
           background-color: #f7f7f7;
           border: 2px solid #ddd;
           border-radius: 6px;
-          padding: 8px 16px;
+          padding: 8px 12px;
           font-size: 0.9rem;
           cursor: pointer;
           transition: all 0.2s;
+          -webkit-tap-highlight-color: transparent;
         }
         
         .difficulty-button.active {
@@ -316,22 +338,22 @@ export default function FoodMemoryGame() {
           color: white;
           border: none;
           border-radius: 6px;
-          padding: 8px 16px;
+          padding: 8px 12px;
           font-size: 0.9rem;
           cursor: pointer;
           transition: all 0.2s;
-          margin-left: 10px;
+          -webkit-tap-highlight-color: transparent;
         }
         
-        .reset-button:hover {
+        .reset-button:hover, .reset-button:active {
           background-color: #d35400;
         }
         
         .game-result {
-          background-color: rgba(255, 255, 255, 0.9);
+          background-color: rgba(255, 255, 255, 0.95);
           border-radius: 10px;
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-          padding: 30px;
+          padding: 25px 15px;
           text-align: center;
           position: fixed;
           top: 50%;
@@ -344,27 +366,27 @@ export default function FoodMemoryGame() {
         
         .win-message {
           color: #27ae60;
-          font-size: 1.8rem;
-          margin-bottom: 20px;
+          font-size: 1.6rem;
+          margin-bottom: 15px;
         }
         
         .lose-message {
           color: #e74c3c;
-          font-size: 1.8rem;
-          margin-bottom: 20px;
+          font-size: 1.6rem;
+          margin-bottom: 15px;
         }
         
         .result-details {
-          margin-bottom: 20px;
-          font-size: 1.1rem;
+          margin-bottom: 15px;
+          font-size: 1rem;
           color: #2c3e50;
         }
         
         .score {
-          font-size: 1.5rem;
+          font-size: 1.3rem;
           font-weight: bold;
           color: #2c3e50;
-          margin-top: 10px;
+          margin-top: 8px;
         }
         
         .play-again-button {
@@ -372,26 +394,30 @@ export default function FoodMemoryGame() {
           color: white;
           border: none;
           border-radius: 6px;
-          padding: 12px 24px;
+          padding: 10px 20px;
           font-size: 1.1rem;
           cursor: pointer;
           transition: all 0.2s;
+          -webkit-tap-highlight-color: transparent;
         }
         
-        .play-again-button:hover {
+        .play-again-button:hover, .play-again-button:active {
           background-color: #27ae60;
         }
         
         .game-board {
           display: grid;
-          gap: 12px;
-          margin-bottom: 30px;
+          gap: 10px;
+          margin-bottom: 20px;
+          width: 100%;
         }
         
         .game-card {
           aspect-ratio: 1;
           cursor: pointer;
           perspective: 1000px;
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
         }
         
         .card-inner {
@@ -400,6 +426,8 @@ export default function FoodMemoryGame() {
           height: 100%;
           transition: transform 0.6s;
           transform-style: preserve-3d;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         
         .game-card.flipped .card-inner {
@@ -415,73 +443,100 @@ export default function FoodMemoryGame() {
           position: absolute;
           width: 100%;
           height: 100%;
+          -webkit-backface-visibility: hidden;
           backface-visibility: hidden;
           border-radius: 10px;
           display: flex;
           justify-content: center;
           align-items: center;
+          user-select: none;
         }
         
         .card-front {
           background-color: white;
           transform: rotateY(180deg);
-          font-size: 2.5rem;
+          font-size: 2rem;
         }
         
         .card-back {
           background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
-          font-size: 2rem;
+          font-size: 1.8rem;
         }
         
         .game-instructions {
           background-color: #f8f9fa;
           border-radius: 10px;
-          padding: 15px;
-          margin-top: 20px;
+          padding: 12px;
+          margin-top: 15px;
         }
         
         .game-instructions h3 {
           color: #2c3e50;
-          margin-bottom: 10px;
+          margin-bottom: 5px;
+          font-size: 1.1rem;
         }
         
         .game-instructions p {
           color: #7f8c8d;
           margin: 0;
+          font-size: 0.9rem;
         }
         
         @media (max-width: 600px) {
+          .game-container {
+            padding: 10px;
+          }
+          
           .game-title {
-            font-size: 2rem;
+            font-size: 1.7rem;
+            margin-bottom: 10px;
           }
           
           .game-dashboard {
-            flex-direction: column;
-            gap: 10px;
-          }
-          
-          .dashboard-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 8px;
           }
           
           .dashboard-label {
-            margin-bottom: 0;
+            font-size: 0.8rem;
+          }
+          
+          .dashboard-value {
+            font-size: 1.1rem;
           }
           
           .difficulty-controls {
-            flex-direction: column;
-            align-items: stretch;
+            gap: 5px;
+            margin-bottom: 10px;
           }
           
-          .reset-button {
-            margin-left: 0;
-            margin-top: 10px;
+          .difficulty-button, .reset-button {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+          }
+          
+          .game-board {
+            gap: 8px;
           }
           
           .card-front {
-            font-size: 2rem;
+            font-size: 1.6rem;
+          }
+          
+          .card-back {
+            font-size: 1.4rem;
+          }
+          
+          .game-result {
+            padding: 20px 15px;
+          }
+          
+          .win-message, .lose-message {
+            font-size: 1.4rem;
+          }
+          
+          .play-again-button {
+            padding: 8px 16px;
+            font-size: 1rem;
           }
         }
       `}</style>
