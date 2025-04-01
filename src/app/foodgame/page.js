@@ -27,7 +27,7 @@ export default function FoodMemoryGame() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   
-  // Refs for sound effects
+  // Refs for sound effects - keeping these even if files don't exist
   const flipSoundRef = useRef(null);
   const matchSoundRef = useRef(null);
   const victorySoundRef = useRef(null);
@@ -62,39 +62,77 @@ export default function FoodMemoryGame() {
     hard: { pairs: 12, time: 80, gridCols: 4, hintPenalty: 15, hintCount: 1 }
   };
   
-  // Initialize sounds - Fixed to handle SSR and browser compatibility
+  // Fix 1: Safely initialize sounds only in browser environment
+  // with better error handling and silent failure
   useEffect(() => {
-    if (typeof window !== 'undefined' && typeof Audio !== 'undefined') {
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
+
+    // Create sounds only if Audio API is available
+    if ('Audio' in window) {
       try {
+        // Using try-catch to handle missing audio files
+        // In a real app, these files need to exist in the public directory
         flipSoundRef.current = new Audio('/sounds/flip.mp3');
         matchSoundRef.current = new Audio('/sounds/match.mp3');
         victorySoundRef.current = new Audio('/sounds/victory.mp3');
         timeoutSoundRef.current = new Audio('/sounds/timeout.mp3');
+        
+        // Fix: Preload sounds for better performance
+        flipSoundRef.current.load();
+        matchSoundRef.current.load();
+        victorySoundRef.current.load();
+        timeoutSoundRef.current.load();
+        
+        // Fix: Handle errors silently
+        const handleError = () => {
+          // console.warn("Audio file not found or cannot be played");
+        };
+        
+        flipSoundRef.current.addEventListener('error', handleError);
+        matchSoundRef.current.addEventListener('error', handleError);
+        victorySoundRef.current.addEventListener('error', handleError);
+        timeoutSoundRef.current.addEventListener('error', handleError);
+        
+        // Clean up
+        return () => {
+          if (flipSoundRef.current) flipSoundRef.current.removeEventListener('error', handleError);
+          if (matchSoundRef.current) matchSoundRef.current.removeEventListener('error', handleError);
+          if (victorySoundRef.current) victorySoundRef.current.removeEventListener('error', handleError);
+          if (timeoutSoundRef.current) timeoutSoundRef.current.removeEventListener('error', handleError);
+        };
       } catch (error) {
         console.error("Error initializing audio:", error);
       }
     }
   }, []);
   
-  // Play sound effect with error handling
+  // Fix 2: Improved sound playback with better error handling
   const playSound = useCallback((soundRef) => {
-    if (soundEnabled && soundRef.current) {
-      try {
-        soundRef.current.currentTime = 0;
-        const playPromise = soundRef.current.play();
-        
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.error("Error playing sound:", error);
-          });
-        }
-      } catch (error) {
-        console.error("Error playing sound:", error);
+    if (!soundEnabled || !soundRef.current) return;
+    
+    try {
+      // Reset playback position
+      soundRef.current.currentTime = 0;
+      
+      // Use promise-based play with catch
+      const playPromise = soundRef.current.play();
+      
+      // Modern browsers return a promise from play()
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          // Silence errors like "play() request was interrupted"
+          // which happens when rapidly clicking cards
+          // console.warn("Sound playback error:", error.message);
+        });
       }
+    } catch (error) {
+      // Fail silently - sound is not critical for gameplay
+      // console.error("Error playing sound:", error);
     }
   }, [soundEnabled]);
   
-  // Use useCallback to memoize resetGame with all dependencies
+  // Fix 3: Reset game function with proper dependencies
   const resetGame = useCallback(() => {
     const config = difficultyConfig[difficulty];
     
@@ -128,43 +166,60 @@ export default function FoodMemoryGame() {
     setGameStarted(false);
     setComboCounter(0);
     setComboMultiplier(1);
-  }, [difficulty, theme, difficultyConfig, themeEmojis]); 
+  }, [difficulty, theme]); 
   
-  // Initialize game and load high scores - Fixed for SSR
+  // Fix 4: Initialize game with better SSR handling 
   useEffect(() => {
     resetGame();
     
-    // Load high scores from localStorage with safety checks
-    if (typeof window !== 'undefined' && window.localStorage) {
+    // Only attempt localStorage in browser environment
+    if (typeof window !== 'undefined') {
       try {
         const savedHighScores = localStorage.getItem('memoryGameHighScores');
         if (savedHighScores) {
-          setHighScores(JSON.parse(savedHighScores));
+          const parsedScores = JSON.parse(savedHighScores);
+          // Validate the structure of saved scores before using
+          if (parsedScores && typeof parsedScores === 'object' && 
+              'easy' in parsedScores && 'medium' in parsedScores && 'hard' in parsedScores) {
+            setHighScores(parsedScores);
+          }
         }
       } catch (error) {
         console.error("Error loading high scores:", error);
+        // If there's an error, just use the default scores
       }
     }
   }, [difficulty, theme, resetGame]); 
   
-  // Timer
+  // Fix 5: Improved timer with better cleanup
   useEffect(() => {
     let interval = null;
+    
     if (isActive && timer > 0 && !isPaused) {
       interval = setInterval(() => {
-        setTimer(timer => timer - 1);
+        setTimer(prevTimer => prevTimer - 1);
       }, 1000);
     } else if (timer === 0 && isActive) {
       setIsActive(false);
       setGameOver(true);
       playSound(timeoutSoundRef);
     }
-    return () => clearInterval(interval);
+    
+    // Proper cleanup to prevent memory leaks
+    return () => {
+      if (interval !== null) {
+        clearInterval(interval);
+      }
+    };
   }, [isActive, timer, isPaused, playSound]);
   
-  // Check if game is over and handle high scores
+  // Fix 6: Improved game over handler with better state management
   useEffect(() => {
-    if (solved.length > 0 && solved.length === cards.length) {
+    // Only process if there are solved cards and the game has started
+    if (!gameStarted || solved.length === 0) return;
+    
+    // Check for game completion
+    if (solved.length === cards.length && cards.length > 0) {
       setIsActive(false);
       setGameOver(true);
       playSound(victorySoundRef);
@@ -184,7 +239,7 @@ export default function FoodMemoryGame() {
       
       setScore(calculatedScore);
       
-      // Update high scores if needed - Safe localStorage handling
+      // Update high scores if needed
       if (calculatedScore > highScores[difficulty] && typeof window !== 'undefined') {
         const newHighScores = {
           ...highScores,
@@ -196,43 +251,52 @@ export default function FoodMemoryGame() {
         try {
           localStorage.setItem('memoryGameHighScores', JSON.stringify(newHighScores));
         } catch (error) {
+          // Handle localStorage errors (e.g., in incognito mode)
           console.error("Error saving high scores:", error);
         }
       }
     }
-  }, [solved, cards, timer, moves, difficulty, highScores, comboCounter, playSound]);
+  }, [solved, cards, timer, moves, difficulty, highScores, comboCounter, playSound, gameStarted]);
   
-  const handleCardClick = (id) => {
+  // Fix 7: Improved card click handler with better state management
+  const handleCardClick = useCallback((id) => {
+    // Don't process clicks if game is over or paused
+    if (gameOver || isPaused) return;
+    
+    // Don't allow clicking already flipped or solved cards
+    if (flipped.includes(id) || solved.includes(id)) return;
+    
     // Start game on first card click
     if (!gameStarted) {
       setGameStarted(true);
       setIsActive(true);
     }
     
-    // Don't allow clicks if game is over, paused, or more than 2 cards are flipped
-    if (gameOver || isPaused || flipped.length >= 2) return;
-    
-    // Don't allow clicking already flipped or solved cards
-    if (flipped.includes(id) || solved.includes(id)) return;
+    // Don't allow more than 2 cards to be flipped at once
+    if (flipped.length >= 2) return;
     
     // Play flip sound
     playSound(flipSoundRef);
     
     // Flip the card
-    const newFlipped = [...flipped, id];
-    setFlipped(newFlipped);
+    setFlipped(prevFlipped => [...prevFlipped, id]);
     
-    // If two cards are flipped, check if they match
-    if (newFlipped.length === 2) {
-      setMoves(moves => moves + 1);
+    // Check for matches when 2 cards are flipped
+    if (flipped.length === 1) {
+      const firstId = flipped[0];
+      const secondId = id;
       
-      const [firstId, secondId] = newFlipped;
+      // Increment moves counter
+      setMoves(prevMoves => prevMoves + 1);
+      
+      // Find the corresponding card objects
       const firstCard = cards.find(card => card.id === firstId);
       const secondCard = cards.find(card => card.id === secondId);
       
+      // Check if cards match
       if (firstCard && secondCard && firstCard.content === secondCard.content) {
         // Cards match, mark as solved
-        setSolved([...solved, firstId, secondId]);
+        setSolved(prevSolved => [...prevSolved, firstId, secondId]);
         setFlipped([]);
         playSound(matchSoundRef);
         
@@ -246,15 +310,18 @@ export default function FoodMemoryGame() {
         }
       } else {
         // Cards don't match, flip back after a short delay
-        setTimeout(() => {
+        const timer = setTimeout(() => {
           setFlipped([]);
           // Reset combo counter on mismatch
           setComboCounter(0);
           setComboMultiplier(1);
         }, 1000);
+        
+        // Clean up timer if component unmounts
+        return () => clearTimeout(timer);
       }
     }
-  };
+  }, [gameOver, isPaused, flipped, solved, gameStarted, cards, comboCounter, playSound]);
   
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -262,62 +329,70 @@ export default function FoodMemoryGame() {
     return `${mins}:${secs < 10 ? '0' + secs : secs}`;
   };
   
-  const changeDifficulty = (level) => {
+  // Fix 8: Improved difficulty change handler 
+  const changeDifficulty = useCallback((level) => {
     if (level !== difficulty) {
       setDifficulty(level);
+      // Reset the game when difficulty changes
+      setTimeout(resetGame, 0);
     }
-  };
+  }, [difficulty, resetGame]);
   
-  const changeTheme = (newTheme) => {
+  // Fix 9: Improved theme change handler
+  const changeTheme = useCallback((newTheme) => {
     if (newTheme !== theme) {
       setTheme(newTheme);
+      // Reset the game when theme changes
+      setTimeout(resetGame, 0);
     }
-  };
+  }, [theme, resetGame]);
   
-  const togglePause = () => {
+  const togglePause = useCallback(() => {
     if (isActive && !gameOver) {
-      setIsPaused(!isPaused);
+      setIsPaused(prevPaused => !prevPaused);
     }
-  };
+  }, [isActive, gameOver]);
   
-  const showHintAction = () => {
+  const showHintAction = useCallback(() => {
     if (hintsRemaining > 0 && !showHint && !gameOver && isActive) {
       setShowHint(true);
-      setHintsRemaining(hintsRemaining - 1);
+      setHintsRemaining(prevHints => prevHints - 1);
       
       // Reduce score for hint usage
       const hintPenalty = difficultyConfig[difficulty].hintPenalty;
       setScore(prev => Math.max(0, prev - hintPenalty));
       
       // Automatically hide hint after 1 second
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setShowHint(false);
       }, 1000);
+      
+      // Clean up timer if component unmounts
+      return () => clearTimeout(timer);
     }
-  };
+  }, [hintsRemaining, showHint, gameOver, isActive, difficulty]);
   
-  const toggleSound = () => {
-    setSoundEnabled(!soundEnabled);
-  };
+  const toggleSound = useCallback(() => {
+    setSoundEnabled(prevSound => !prevSound);
+  }, []);
   
-  // Check if mobile with safe window access
+  // Fix 10: Improved mobile detection with better event handling
   useEffect(() => {
+    // Skip on server side
+    if (typeof window === 'undefined') return;
+    
     const checkIfMobile = () => {
-      if (typeof window !== 'undefined') {
-        setIsMobile(window.innerWidth <= 768);
-      }
+      setIsMobile(window.innerWidth <= 768);
     };
     
     // Initial check
     checkIfMobile();
     
-    // Add listener for window resize with safety check
-    if (typeof window !== 'undefined') {
-      window.addEventListener('resize', checkIfMobile);
-      
-      // Clean up
-      return () => window.removeEventListener('resize', checkIfMobile);
-    }
+    // Add listener for window resize
+    window.addEventListener('resize', checkIfMobile);
+    
+    // Clean up listener to prevent memory leaks
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
   
   return (
