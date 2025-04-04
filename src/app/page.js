@@ -438,57 +438,160 @@ export default function HomePage() {
             </p>
 
             <AnimatePresence mode="wait">
-              {(mealInfo.currentMeal || mealInfo.nextMeal) && (
-                <motion.div
-                  key={mealInfo.currentMeal ? "current" : "next"}
-                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                  transition={{ duration: 0.4 }}
-                  className="mt-6 bg-white/20 backdrop-blur-sm p-4 rounded-xl max-w-md mx-auto border border-white/30 shadow-lg hover:shadow-xl hover:bg-white/25 transition-all duration-300"
-                >
-                  {mealInfo.currentMeal ? (
-                    <>
-                      <Badge className="bg-green-500 text-white mb-2 shadow-md shadow-green-900/20 px-3">
-                        <Star className="w-3 h-3 mr-1" />
-                        Happening Now
-                      </Badge>
-                      <p className="text-white font-medium text-lg">
-                        {mealInfo.currentMeal.label} (
-                        {mealInfo.currentMeal.timeLabel})
-                      </p>
-                      <p className="text-white/90 mt-1 font-medium">
-                        {todayMenu && todayMenu[mealInfo.currentMeal.key]}
-                      </p>
-                      <div className="mt-2 flex items-center justify-center text-white/80 text-sm">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {mealInfo.currentMeal.timeUntilEnd}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <Badge className="bg-amber-200 text-amber-800 mb-2 shadow-md shadow-amber-900/10 px-3">
-                        <Clock className="w-3 h-3 mr-1" />
-                        Coming Up
-                      </Badge>
-                      <p className="text-white font-medium text-lg">
-                        {mealInfo.nextMeal.label} ({mealInfo.nextMeal.timeLabel}
-                        )
-                      </p>
-                      <p className="text-white/90 mt-1 font-medium">
-                        {mealInfo.nextMeal.status === "tomorrow" && tomorrowMenu
-                          ? tomorrowMenu[mealInfo.nextMeal.key]
-                          : todayMenu && todayMenu[mealInfo.nextMeal.key]}
-                      </p>
-                      <div className="mt-2 flex items-center justify-center text-white/80 text-sm">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {mealInfo.timeUntilNext}
-                      </div>
-                    </>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+  {(mealInfo.currentMeal || mealInfo.nextMeal) && (
+    <motion.div
+      key={mealInfo.currentMeal ? "current" : "next"}
+      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9, y: 10 }}
+      transition={{ duration: 0.4 }}
+      className="mt-6 perspective-1000 group"
+    >
+      <motion.div 
+        className="max-w-md mx-auto transform-style-3d relative"
+        whileHover={{ 
+          rotateX: 5, 
+          rotateY: 10,
+          scale: 1.05,
+          transition: { duration: 0.4 }
+        }}
+      >
+        {/* Background card with shadow */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-300 via-amber-400 to-orange-500 rounded-xl transform translate-z-0 shadow-xl dark:from-amber-500 dark:via-amber-600 dark:to-orange-700" />
+        
+        {/* Main card with content */}
+        <div className="relative bg-white/20 backdrop-blur-md p-5 rounded-xl border border-white/40 transform translate-z-8 shadow-lg group-hover:shadow-xl transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 rounded-xl opacity-70 overflow-hidden">
+            <svg className="absolute w-32 h-32 text-white/10 top-0 right-0 transform translate-x-1/3 -translate-y-1/3 opacity-50" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11,9H9V2H7V9H5V2H3V9C3,11.12 4.66,12.84 6.75,12.97V22H9.25V12.97C11.34,12.84 13,11.12 13,9V2H11V9M16,6V14H18.5V22H21V2C18.24,2 16,4.24 16,6Z" />
+            </svg>
+            
+            <svg className="absolute w-24 h-24 text-white/10 bottom-0 left-0 transform -translate-x-1/3 translate-y-1/3 opacity-30" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2,19H4V15H6V19H8V15H10V19H12V15H14V19H16V15H18V19H20V15H22V13H2V15H4V19M2,5V11H6V7H10V11H14V7H18V11H22V5H2Z" />
+            </svg>
+          </div>
+          
+          {/* Shiny edge effect */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-70" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-30" />
+          <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white to-transparent opacity-50" />
+          <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white to-transparent opacity-50" />
+          
+          {/* Content */}
+          <div className="relative z-10">
+            {mealInfo.currentMeal ? (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <Badge className="bg-gradient-to-r from-green-400 to-green-600 text-white px-3 py-1 font-medium shadow-md shadow-green-900/30">
+                    <Star className="w-3 h-3 mr-1" />
+                    Happening Now
+                  </Badge>
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white shadow-inner">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                </div>
+                
+                <h3 className="text-white font-bold text-2xl mb-1 drop-shadow-sm tracking-tight">
+                  {mealInfo.currentMeal.label}
+                </h3>
+                
+                <div className="bg-white/10 backdrop-blur-md rounded-lg p-3 mb-3 border border-white/20 transform translate-z-4 shadow-sm">
+                  <p className="text-white/90 font-medium text-lg">
+                    {todayMenu && todayMenu[mealInfo.currentMeal.key]}
+                  </p>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <p className="text-white/90 font-medium">
+                    {mealInfo.currentMeal.timeLabel}
+                  </p>
+                  <div className="flex items-center text-white/80 font-medium bg-white/10 px-3 py-1 rounded-full">
+                    <Clock className="w-4 h-4 mr-1" />
+                    {mealInfo.currentMeal.timeUntilEnd}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <Badge className="bg-gradient-to-r from-amber-300 to-amber-500 text-amber-900 px-3 py-1 font-medium shadow-md shadow-amber-900/20">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Coming Up
+                  </Badge>
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center text-amber-900 shadow-inner">
+                    <UtensilsCrossed className="w-5 h-5" />
+                  </div>
+                </div>
+                
+                <h3 className="text-white font-bold text-2xl mb-1 drop-shadow-sm tracking-tight">
+                  {mealInfo.nextMeal.label}
+                </h3>
+                
+                <div className="bg-white/10 backdrop-blur-md rounded-lg p-3 mb-3 border border-white/20 transform translate-z-4 shadow-sm">
+                  <p className="text-white/90 font-medium text-lg">
+                    {mealInfo.nextMeal.status === "tomorrow" && tomorrowMenu
+                      ? tomorrowMenu[mealInfo.nextMeal.key]
+                      : todayMenu && todayMenu[mealInfo.nextMeal.key]}
+                  </p>
+                </div>
+                
+                <div className="flex items-center justify-between text-sm">
+                  <p className="text-white/90 font-medium">
+                    {mealInfo.nextMeal.timeLabel}
+                  </p>
+                  <div className="flex items-center text-white/80 font-medium bg-white/10 px-3 py-1 rounded-full">
+                    <Clock className="w-4 h-4 mr-1" />
+                    {mealInfo.timeUntilNext}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {/* Floating dots/elements for 3D effect */}
+        <motion.div 
+          className="absolute w-6 h-6 rounded-full bg-white opacity-20 left-4 bottom-4 transform translate-z-12"
+          animate={{ 
+            y: [0, -10, 0],
+            opacity: [0.2, 0.5, 0.2] 
+          }}
+          transition={{ 
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut" 
+          }}
+        />
+        <motion.div 
+          className="absolute w-4 h-4 rounded-full bg-white opacity-30 right-10 top-10 transform translate-z-16"
+          animate={{ 
+            y: [0, -7, 0],
+            opacity: [0.3, 0.6, 0.3] 
+          }}
+          transition={{ 
+            duration: 2.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5
+          }}
+        />
+        <motion.div 
+          className="absolute w-3 h-3 rounded-full bg-white opacity-20 right-6 bottom-20 transform translate-z-20"
+          animate={{ 
+            y: [0, -5, 0],
+            opacity: [0.2, 0.4, 0.2] 
+          }}
+          transition={{ 
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
+        />
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
           </div>
         </div>
 

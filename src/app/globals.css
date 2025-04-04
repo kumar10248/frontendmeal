@@ -116,6 +116,38 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.translate-z-0 {
+  transform: translateZ(0px);
+}
+
+.translate-z-4 {
+  transform: translateZ(4px);
+}
+
+.translate-z-8 {
+  transform: translateZ(8px);
+}
+
+.translate-z-12 {
+  transform: translateZ(12px);
+}
+
+.translate-z-16 {
+  transform: translateZ(16px);
+}
+
+.translate-z-20 {
+  transform: translateZ(20px);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
