@@ -21,6 +21,7 @@ import {
   UtensilsCrossed,
   Sandwich,
   Clock,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -254,6 +255,7 @@ export default function HomePage() {
     timeUntilNext: null,
   });
   const [greeting, setGreeting] = useState(getGreeting());
+  const [hoveredMeal, setHoveredMeal] = useState(null);
 
   // Update meal information and greeting
   useEffect(() => {
@@ -377,13 +379,13 @@ export default function HomePage() {
   const tomorrowMenu = weeklyMenu.find((menu) => menu.dateLabel === "Tomorrow");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4 sm:px-6 lg:px-8 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsIDE2NywgMzgsIDAuMDcpIi8+PC9zdmc+')] dark:bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsIDE2NywgMzgsIDAuMDMpIi8+PC9zdmc+')]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-7xl mx-auto space-y-8"
       >
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-600 dark:to-orange-700 p-8 shadow-xl text-center mb-12">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-600 dark:to-orange-700 p-8 shadow-xl text-center mb-12 transition-all duration-500 hover:shadow-2xl hover:shadow-amber-200/20 dark:hover:shadow-amber-700/20">
           <div className="absolute inset-0 opacity-10">
             <svg className="h-full w-full" viewBox="0 0 800 800">
               <defs>
@@ -405,13 +407,32 @@ export default function HomePage() {
             </svg>
           </div>
 
+          <motion.div 
+            className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-200 to-amber-300"
+            initial={{ scaleX: 0, transformOrigin: "left" }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 2, ease: "easeOut" }}
+          />
+          
+          <motion.div 
+            className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-300 to-yellow-200"
+            initial={{ scaleX: 0, transformOrigin: "right" }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 2, ease: "easeOut" }}
+          />
+
           <div className="relative z-10 space-y-4">
             <div className="mb-2">
-              <Badge className="text-amber-800 bg-amber-100">{greeting}</Badge>
+              <Badge className="text-amber-800 bg-amber-100 px-3 py-1 text-sm shadow-md shadow-amber-600/20 hover:shadow-lg hover:bg-white transition-all duration-300">{greeting}</Badge>
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white">
+            <motion.h1 
+              className="text-3xl md:text-5xl font-extrabold tracking-tight text-white"
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, type: "spring" }}
+            >
               Hostel Mess Menu
-            </h1>
+            </motion.h1>
             <p className="text-lg text-amber-100 max-w-2xl mx-auto">
               Your weekly meal schedule at Chandigarh University hostel
             </p>
@@ -420,21 +441,23 @@ export default function HomePage() {
               {(mealInfo.currentMeal || mealInfo.nextMeal) && (
                 <motion.div
                   key={mealInfo.currentMeal ? "current" : "next"}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  className="mt-6 bg-white/20 backdrop-blur-sm p-4 rounded-xl max-w-md mx-auto"
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                  transition={{ duration: 0.4 }}
+                  className="mt-6 bg-white/20 backdrop-blur-sm p-4 rounded-xl max-w-md mx-auto border border-white/30 shadow-lg hover:shadow-xl hover:bg-white/25 transition-all duration-300"
                 >
                   {mealInfo.currentMeal ? (
                     <>
-                      <Badge className="bg-green-500 text-white mb-2">
+                      <Badge className="bg-green-500 text-white mb-2 shadow-md shadow-green-900/20 px-3">
+                        <Star className="w-3 h-3 mr-1" />
                         Happening Now
                       </Badge>
                       <p className="text-white font-medium text-lg">
                         {mealInfo.currentMeal.label} (
                         {mealInfo.currentMeal.timeLabel})
                       </p>
-                      <p className="text-white/90 mt-1">
+                      <p className="text-white/90 mt-1 font-medium">
                         {todayMenu && todayMenu[mealInfo.currentMeal.key]}
                       </p>
                       <div className="mt-2 flex items-center justify-center text-white/80 text-sm">
@@ -444,14 +467,15 @@ export default function HomePage() {
                     </>
                   ) : (
                     <>
-                      <Badge className="bg-amber-200 text-amber-800 mb-2">
+                      <Badge className="bg-amber-200 text-amber-800 mb-2 shadow-md shadow-amber-900/10 px-3">
+                        <Clock className="w-3 h-3 mr-1" />
                         Coming Up
                       </Badge>
                       <p className="text-white font-medium text-lg">
                         {mealInfo.nextMeal.label} ({mealInfo.nextMeal.timeLabel}
                         )
                       </p>
-                      <p className="text-white/90 mt-1">
+                      <p className="text-white/90 mt-1 font-medium">
                         {mealInfo.nextMeal.status === "tomorrow" && tomorrowMenu
                           ? tomorrowMenu[mealInfo.nextMeal.key]
                           : todayMenu && todayMenu[mealInfo.nextMeal.key]}
@@ -474,10 +498,10 @@ export default function HomePage() {
           className="w-full"
         >
           <div className="sticky top-0 z-30 py-2 bg-orange-50/80 dark:bg-slate-900/80 backdrop-blur-md">
-            <TabsList className="flex flex-wrap justify-center h-auto gap-2 p-1 bg-orange-100/50 dark:bg-slate-800/50 rounded-full">
+            <TabsList className="flex flex-wrap justify-center h-auto gap-2 p-1 bg-orange-100/50 dark:bg-slate-800/50 rounded-full shadow-md">
               <TabsTrigger
                 value="all"
-                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-full"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-full transition-all duration-300 hover:bg-amber-100 dark:hover:bg-slate-700 data-[state=active]:shadow-md"
               >
                 Full Week
               </TabsTrigger>
@@ -486,7 +510,7 @@ export default function HomePage() {
                   key={menu._id}
                   value={menu._id}
                   className={cn(
-                    "data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-full",
+                    "data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-full transition-all duration-300 hover:bg-amber-100 dark:hover:bg-slate-700 data-[state=active]:shadow-md",
                     menu.dateLabel === "Today" && "font-medium"
                   )}
                 >
@@ -504,14 +528,26 @@ export default function HomePage() {
             <TabsContent value="all" className="space-y-4 mt-6">
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {weeklyMenu.map((menu) => (
-                  <MenuCard key={menu._id} menu={menu} mealInfo={mealInfo} />
+                  <MenuCard 
+                    key={menu._id} 
+                    menu={menu} 
+                    mealInfo={mealInfo} 
+                    onMealHover={setHoveredMeal} 
+                    hoveredMeal={hoveredMeal}
+                  />
                 ))}
               </div>
             </TabsContent>
 
             {weeklyMenu.map((menu) => (
               <TabsContent key={menu._id} value={menu._id}>
-                <MenuCard menu={menu} expanded mealInfo={mealInfo} />
+                <MenuCard 
+                  menu={menu} 
+                  expanded 
+                  mealInfo={mealInfo} 
+                  onMealHover={setHoveredMeal} 
+                  hoveredMeal={hoveredMeal}
+                />
               </TabsContent>
             ))}
           </AnimatePresence>
@@ -521,7 +557,7 @@ export default function HomePage() {
   );
 }
 
-function MenuCard({ menu, expanded = false, mealInfo }) {
+function MenuCard({ menu, expanded = false, mealInfo, onMealHover, hoveredMeal }) {
   const date = new Date(menu.date);
   const formattedDate = date.toLocaleDateString("en-US", {
     month: "long",
@@ -539,31 +575,36 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
       transition={{ duration: 0.3 }}
       className={cn("group relative", expanded ? "w-full" : "")}
     >
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-200/20 to-orange-300/20 rounded-2xl transform translate-x-1 translate-y-1 transition-transform group-hover:translate-x-2 group-hover:translate-y-2 dark:from-amber-700/10 dark:to-orange-600/10"></div>
       <Card
         className={cn(
           "relative overflow-hidden backdrop-blur-sm h-full",
-          "bg-white/80 dark:bg-slate-800/80 shadow-md hover:shadow-xl transition-shadow",
+          "bg-white/80 dark:bg-slate-800/80 shadow-md hover:shadow-xl transition-all duration-300",
           expanded ? "w-full border-0 shadow-xl" : "",
-          isToday ? "border-2 border-amber-500 dark:border-amber-400" : ""
+          isToday ? "border-2 border-amber-500 dark:border-amber-400" : "",
+          isToday ? "shadow-md shadow-amber-300/30 dark:shadow-amber-700/20" : "",
+          "hover:translate-y-[-3px]"
         )}
       >
         {isToday && (
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 dark:bg-amber-400/10 transform rotate-45 translate-x-20 -translate-y-8" />
         )}
+        
+        <div className="absolute inset-x-0 h-1 top-0 bg-gradient-to-r from-amber-300/70 to-orange-400/70 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
 
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+        <CardHeader className="pb-2 relative">
+          <div className="flex items-center justify-between relative z-10">
             <CardTitle className="flex items-center gap-2 text-xl font-bold text-amber-700 dark:text-amber-400">
               {menu.dateLabel}
               {isToday && (
-                <Badge className="ml-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white">
+                <Badge className="ml-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-sm">
                   Today
                 </Badge>
               )}
               {isTomorrow && (
                 <Badge
                   variant="outline"
-                  className="ml-2 border-amber-400 text-amber-600 dark:text-amber-400"
+                  className="ml-2 border-amber-400 text-amber-600 dark:text-amber-400 shadow-sm"
                 >
                   Tomorrow
                 </Badge>
@@ -584,15 +625,16 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-        <MealSection 
-  title={
-    <div className="flex items-center flex-wrap">
-      <span className="mr-1">Breakfast</span>
-      <span className="text-green-600 dark:text-green-400 text-xs whitespace-nowrap">(7:30 AM - 9:00 AM)</span>
-    </div>
-  } 
-  content={menu.breakfast} 
-  icon={<Coffee className="w-5 h-5 text-amber-500" />} 
+          <MealSection 
+            id={`${menu._id}-breakfast`}
+            title={
+              <div className="flex items-center flex-wrap">
+                <span className="mr-1">Breakfast</span>
+                <span className="text-green-600 dark:text-green-400 text-xs whitespace-nowrap">(7:30 AM - 9:00 AM)</span>
+              </div>
+            } 
+            content={menu.breakfast} 
+            icon={<Coffee className="w-5 h-5 text-amber-500" />} 
             isActive={isToday && mealInfo.currentMeal?.key === "breakfast"}
             isUpcoming={
               isToday &&
@@ -611,8 +653,12 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
                 ? mealInfo.currentMeal.timeUntilEnd
                 : null
             }
+            onMouseEnter={() => onMealHover(`${menu._id}-breakfast`)}
+            onMouseLeave={() => onMealHover(null)}
+            isHovered={hoveredMeal === `${menu._id}-breakfast`}
           />
           <MealSection
+            id={`${menu._id}-lunch`}
             title={
               <>
                 Lunch{" "}
@@ -641,8 +687,12 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
                 ? mealInfo.currentMeal.timeUntilEnd
                 : null
             }
+            onMouseEnter={() => onMealHover(`${menu._id}-lunch`)}
+            onMouseLeave={() => onMealHover(null)}
+            isHovered={hoveredMeal === `${menu._id}-lunch`}
           />
           <MealSection
+            id={`${menu._id}-snacks`}
             title={
               <>
                 Snacks{" "}
@@ -671,8 +721,12 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
                 ? mealInfo.currentMeal.timeUntilEnd
                 : null
             }
+            onMouseEnter={() => onMealHover(`${menu._id}-snacks`)}
+            onMouseLeave={() => onMealHover(null)}
+            isHovered={hoveredMeal === `${menu._id}-snacks`}
           />
           <MealSection
+            id={`${menu._id}-dinner`}
             title={
               <>
                 Dinner{" "}
@@ -701,6 +755,9 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
                 ? mealInfo.currentMeal.timeUntilEnd
                 : null
             }
+            onMouseEnter={() => onMealHover(`${menu._id}-dinner`)}
+            onMouseLeave={() => onMealHover(null)}
+            isHovered={hoveredMeal === `${menu._id}-dinner`}
           />
         </CardContent>
       </Card>
@@ -708,112 +765,110 @@ function MenuCard({ menu, expanded = false, mealInfo }) {
   );
 }
 
-function MealSection({
-  title,
-  content,
-  icon,
-  isActive,
-  isUpcoming,
-  timeUntil,
-  timeUntilEnd,
+function MealSection({ 
+  id, 
+  title, 
+  content, 
+  icon, 
+  isActive, 
+  isUpcoming, 
+  timeUntil, 
+  timeUntilEnd, 
+  onMouseEnter, 
+  onMouseLeave, 
+  isHovered 
 }) {
   return (
     <div
+      id={id}
       className={cn(
-        "space-y-3 p-4 rounded-xl transition-colors",
+        "relative p-4 rounded-xl transition-all duration-300 overflow-hidden",
         isActive
-          ? "bg-amber-100/60 dark:bg-amber-900/30"
-          : "hover:bg-amber-50 dark:hover:bg-slate-700/30"
+          ? "bg-gradient-to-br from-green-500/10 to-green-600/10 dark:from-green-500/10 dark:to-green-600/10 border border-green-500/20"
+          : isUpcoming
+          ? "bg-gradient-to-br from-amber-500/10 to-amber-600/10 dark:from-amber-500/10 dark:to-amber-600/10 border border-amber-500/20"
+          : "bg-white dark:bg-slate-800/40 group-hover:bg-orange-50 dark:group-hover:bg-slate-700/40",
+        isHovered && "shadow-lg transform scale-[1.02]"
       )}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
-      <div className="flex items-center gap-3">
-        <div
-          className={cn(
-            "p-2 rounded-lg",
-            isActive
-              ? "bg-gradient-to-br from-amber-200 to-orange-200 dark:from-amber-700 dark:to-orange-700"
-              : "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-slate-800 dark:to-slate-700"
+      {(isActive || isUpcoming) && (
+        <div className="absolute top-2 right-2">
+          {isActive ? (
+            <Badge className="bg-green-500 text-white shadow-sm">Now</Badge>
+          ) : (
+            <Badge className="bg-amber-400 text-amber-900 shadow-sm">Next</Badge>
           )}
-        >
-          {icon}
         </div>
-        <h3 className="font-semibold text-lg text-amber-800 dark:text-amber-300 flex items-center flex-wrap">
-          {title}
-          {isActive && (
-            <Badge className="ml-2 bg-green-500 text-white text-xs">
-              Now Serving
-            </Badge>
-          )}
-          {isUpcoming && (
-            <Badge className="ml-2 bg-amber-300 text-amber-800 text-xs">
-              Coming Up
-            </Badge>
-          )}
-        </h3>
+      )}
+
+      <div className="flex items-center gap-2 font-medium mb-2">
+        {icon}
+        {typeof title === "string" ? title : title}
       </div>
-      <p
-        className={cn(
-          "text-gray-700 dark:text-gray-300 pl-12 relative before:absolute before:left-8 before:top-2 before:bottom-2 before:w-px",
-          isActive
-            ? "before:bg-gradient-to-b before:from-amber-300 before:to-orange-300 dark:before:from-amber-600 dark:before:to-orange-600 font-medium"
-            : "before:bg-gradient-to-b before:from-amber-200 before:to-orange-200 dark:before:from-amber-800 dark:before:to-orange-800"
-        )}
-      >
-        {content}
 
-        {timeUntil && (
-          <div className="mt-2 text-green-600 dark:text-green-400 text-xs font-medium flex items-center">
-            <Clock className="w-3 h-3 mr-1" />
-            {timeUntil}
-          </div>
-        )}
-
-        {isActive && timeUntilEnd && (
-          <div className="mt-2 text-orange-600 dark:text-orange-400 text-xs font-medium flex items-center">
-            <Clock className="w-3 h-3 mr-1" />
-            {timeUntilEnd}
-          </div>
-        )}
+      <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line">
+        {content || "Not available"}
       </p>
+
+      {(timeUntil || timeUntilEnd) && (
+        <div className="mt-2 flex items-center text-sm font-medium">
+          <Clock className="w-4 h-4 mr-1 text-amber-500" />
+          <span className="text-amber-700 dark:text-amber-400">
+            {timeUntil || timeUntilEnd}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
 
 function LoadingSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto space-y-8 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="space-y-4">
-        <div className="bg-gradient-to-r from-amber-500/20 to-orange-600/20 dark:from-amber-600/10 dark:to-orange-700/10 p-8 rounded-2xl animate-pulse">
-          <Skeleton className="h-12 w-64 mx-auto bg-white/30 dark:bg-white/10" />
-          <Skeleton className="h-6 w-72 mx-auto mt-4 bg-white/20 dark:bg-white/5" />
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 dark:from-slate-900 dark:to-slate-800 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-600 dark:to-orange-700 p-8 shadow-xl text-center mb-12">
+          <Skeleton className="h-8 w-36 mx-auto mb-4 rounded bg-white/30" />
+          <Skeleton className="h-12 w-72 mx-auto mb-4 rounded bg-white/30" />
+          <Skeleton className="h-6 w-96 mx-auto rounded bg-white/30" />
         </div>
-      </div>
 
-      <div className="py-4">
-        <Skeleton className="h-12 w-full max-w-md mx-auto rounded-full bg-orange-100/50 dark:bg-slate-800/50" />
-      </div>
+        <div className="bg-white/80 dark:bg-slate-800/80 p-4 rounded-lg">
+          <div className="flex justify-center space-x-2 mb-6">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-10 w-24 rounded-full" />
+            ))}
+          </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3].map((i) => (
-          <Card
-            key={i}
-            className="overflow-hidden backdrop-blur-sm relative bg-white/80 dark:bg-slate-800/80"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-50/30 to-orange-50/30 dark:from-amber-900/20 dark:to-orange-900/20 animate-pulse" />
-            <CardHeader>
-              <Skeleton className="h-7 w-32 bg-amber-100/50 dark:bg-amber-800/20" />
-              <Skeleton className="h-4 w-48 bg-orange-100/50 dark:bg-orange-800/20" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[1, 2, 3, 4].map((j) => (
-                <div key={j} className="space-y-2">
-                  <Skeleton className="h-5 w-32 bg-amber-100/50 dark:bg-amber-800/20" />
-                  <Skeleton className="h-4 w-full bg-orange-100/50 dark:bg-orange-800/20" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((card) => (
+              <div key={card} className="space-y-6">
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between">
+                      <Skeleton className="h-6 w-24 rounded" />
+                      <Skeleton className="h-6 w-32 rounded" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {[1, 2, 3, 4].map((section) => (
+                      <div key={section} className="p-4 rounded-xl bg-white dark:bg-slate-800/40">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Skeleton className="h-5 w-5 rounded-full" />
+                          <Skeleton className="h-5 w-32 rounded" />
+                        </div>
+                        <Skeleton className="h-4 w-full rounded mb-2" />
+                        <Skeleton className="h-4 w-5/6 rounded mb-2" />
+                        <Skeleton className="h-4 w-4/6 rounded" />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
