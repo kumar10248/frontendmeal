@@ -12,7 +12,7 @@ export default function FeedbackForm() {
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
 
   // Backend API URL - store in environment variable in production
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://cumeal.vercel.app/api';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
   // Check if user already submitted feedback
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function FeedbackForm() {
           <CheckCircle className="w-12 h-12 text-green-500" />
           <h2 className="text-xl font-bold text-amber-800 dark:text-amber-400">Thank You!</h2>
           <p className="text-slate-700 dark:text-slate-300">
-            You've already submitted your feedback. We appreciate your input!
+            You&apos;ve already submitted your feedback. We appreciate your input!
           </p>
         </div>
       </div>
