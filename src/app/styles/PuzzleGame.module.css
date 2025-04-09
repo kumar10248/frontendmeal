@@ -1,0 +1,159 @@
+/* styles/PuzzleGame.module.css */
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .backButton, .settingsButton {
+    border: none;
+    background: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+  
+  .title {
+    margin: 0;
+  }
+  
+  .scoreBoard {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .scoreContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .scoreBox {
+    padding: 10px 20px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 1.5rem;
+    margin: 5px;
+  }
+  
+  .vs {
+    margin: 0 20px;
+  }
+  
+  .gridContainer {
+    margin-bottom: 20px;
+  }
+  
+  .grid {
+    border: 1px solid #ccc;
+  }
+  
+  .row {
+    display: flex;
+  }
+  
+  .cell {
+    width: 60px;
+    height: 60px;
+    border: 1px solid #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .cell.highlighted {
+    background-color: #e6f7ff;
+  }
+  
+  .cell.selected {
+    background-color: #ffd591;
+  }
+  
+  .cell.newPlacement {
+    animation: highlight 1s;
+  }
+  
+  @keyframes highlight {
+    0% { background-color: #52c41a; }
+    100% { background-color: #e6f7ff; }
+  }
+  
+  .letter {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  .clue {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: 0.6rem;
+    color: #888;
+  }
+  
+  .icon {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: 0.8rem;
+  }
+  
+  .currentLetterContainer {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  
+  .currentLetter {
+    width: 60px;
+    height: 60px;
+    border: 2px solid #1890ff;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
+  }
+  
+  .submitButton {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #1890ff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+  
+  .submitButton:disabled {
+    background-color: #d9d9d9;
+    cursor: not-allowed;
+  }
+  
+  .tools {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .toolButton {
+    margin: 0 10px;
+    border: none;
+    background: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }

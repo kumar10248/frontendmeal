@@ -95,7 +95,8 @@ export default function Header() {
       icon: Gamepad,
       dropdownItems: [
         { name: 'Memory Game', href: '/memorygame', icon: Gamepad },
-        { name: 'Snake Game', href: '/snakegame', icon: Gamepad }
+        { name: 'Snake Game', href: '/snakegame', icon: Gamepad },
+        {name:'Puzzle Game', href: '/puzzlegame', icon: Gamepad},
       ]
     },
     { 

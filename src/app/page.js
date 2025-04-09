@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { getCurrentWeekMenu } from "./lib/api";
+
+import FeedbackPopupSystem from './components/FeedbackForm';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -923,6 +926,7 @@ function MealSection({
           </span>
         </div>
       )}
+
     </div>
   );
 }
