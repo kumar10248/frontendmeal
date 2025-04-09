@@ -12,7 +12,7 @@ export default function FeedbackForm() {
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
 
   // Backend API URL - store in environment variable in production
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://cumeal.vercel.app/api';
 
   // Check if user already submitted feedback
   useEffect(() => {
