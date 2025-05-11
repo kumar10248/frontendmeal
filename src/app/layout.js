@@ -37,7 +37,7 @@ export default function RootLayout({ children }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
 
           <Header />
-          <FeedbackPopupSystem />
+          {/* <FeedbackPopupSystem /> */}
           <main className="flex-1 container mx-auto px-4 py-8">
             {children}
           </main>
