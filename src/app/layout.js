@@ -5,9 +5,13 @@ import Header from './components/header'
 import Footer from './components/footer'
 import FeedbackPopupSystem from './components/FeedbackForm'
 import { Analytics } from "@vercel/analytics/react"
-// Change this:
+import ServiceWorkerRegistration from './components/ServiceWorkerRegistration'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap', // Improve font loading performance
+  preload: true,
+})
 
 export const metadata = {
   title: 'Cuisine | Chandigarh University Hostel Meal Menu',
@@ -28,14 +32,30 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Chandigarh University Hostel Meal Menu',
     description: "'Discover what's on the menu at Chandigarh University hostels. Daily breakfast, lunch, snacks, and dinner options all in one place.',"
-  }
+  },
+  // Add viewport and performance hints
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
+  themeColor: '#f59e0b',
 }
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Preload critical resources */}
+        <link rel="preload" href="/logo.svg" as="image" type="image/svg+xml" />
+        <link rel="dns-prefetch" href="https://cumeal.vercel.app" />
+        <link rel="preconnect" href="https://cumeal.vercel.app" crossOrigin="anonymous" />
+        
+        {/* Add manifest for PWA */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#f59e0b" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Cuisine" />
+      </head>
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-
           <Header />
           {/* <FeedbackPopupSystem /> */}
           <main className="flex-1 container mx-auto px-4 py-8">
@@ -43,6 +63,7 @@ export default function RootLayout({ children }) {
           </main>
           <Footer />
         </ThemeProvider>
+        <ServiceWorkerRegistration />
         <Analytics />
       </body>
     </html>

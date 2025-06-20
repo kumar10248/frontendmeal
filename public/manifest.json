@@ -1,0 +1,76 @@
+{
+  "name": "Cuisine - CU Hostel Meals",
+  "short_name": "Cuisine",
+  "description": "Chandigarh University Hostel Meal Menu - View daily breakfast, lunch, snacks, and dinner menus",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fef7ed",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-narrow.png", 
+      "sizes": "375x812",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "categories": ["food", "lifestyle", "education"],
+  "shortcuts": [
+    {
+      "name": "Today's Menu",
+      "short_name": "Today",
+      "description": "View today's meal menu",
+      "url": "/?tab=today",
+      "icons": [
+        {
+          "src": "/logo.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Full Week",
+      "short_name": "Week",
+      "description": "View weekly meal menu",
+      "url": "/?tab=all",
+      "icons": [
+        {
+          "src": "/logo.svg",
+          "sizes": "192x192", 
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
+}
